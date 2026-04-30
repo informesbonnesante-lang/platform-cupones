@@ -9,35 +9,14 @@ DROP TABLE IF EXISTS public.coupons;
 DROP TABLE IF EXISTS public.categorias_servicio;
 
 -- ================================================
--- 2. CREAR TABLA: categorias_servicio
--- ================================================
-CREATE TABLE public.categorias_servicio (
-  id         UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  name       TEXT NOT NULL UNIQUE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Insertar categorías de ejemplo
-INSERT INTO public.categorias_servicio (name) VALUES
-  ('Consulta General'),
-  ('Laboratorio'),
-  ('Imágenes'),
-  ('Kinesiología'),
-  ('Especialidad');
-
--- RLS
-ALTER TABLE public.categorias_servicio ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "Permitir todo en categorias" ON public.categorias_servicio;
-CREATE POLICY "Permitir todo en categorias"
-  ON public.categorias_servicio FOR ALL USING (true) WITH CHECK (true);
-
--- ================================================
--- 3. CREAR TABLA: coupons
+-- 2. CREAR TABLA: coupons (SCHEMA COMPLETO v4)
+-- Incluye: ui_number, patient_name y todos los campos
 -- ================================================
 CREATE TABLE public.coupons (
   id               UUID                     DEFAULT gen_random_uuid() PRIMARY KEY,
+  ui_number        TEXT                     UNIQUE,
   code             TEXT                     NOT NULL UNIQUE,
+  patient_name     TEXT                     NOT NULL DEFAULT '',
   patient_ci       TEXT                     NOT NULL,
   telefono         TEXT                     NOT NULL DEFAULT '',
   service_category TEXT                     NOT NULL,
@@ -53,7 +32,9 @@ CREATE TABLE public.coupons (
   used_at          TIMESTAMP WITH TIME ZONE
 );
 
--- RLS
+-- ================================================
+-- 3. RLS: Permitir todo con anon key
+-- ================================================
 ALTER TABLE public.coupons ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Permitir lectura en cupones"       ON public.coupons;
@@ -74,8 +55,9 @@ CREATE POLICY "Permitir eliminacion en cupones"
   ON public.coupons FOR DELETE USING (true);
 
 -- ================================================
--- 4. VERIFICACIÓN FINAL
+-- 4. VERIFICACION FINAL
 -- ================================================
-SELECT 'categorias_servicio' AS tabla, COUNT(*) AS registros FROM public.categorias_servicio
-UNION ALL
-SELECT 'coupons' AS tabla, COUNT(*) AS registros FROM public.coupons;
+SELECT column_name, data_type
+FROM information_schema.columns
+WHERE table_name = 'coupons'
+ORDER BY ordinal_position;
