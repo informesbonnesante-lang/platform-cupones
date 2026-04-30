@@ -12,7 +12,7 @@ const fmt    = (d) => d ? new Date(d).toLocaleDateString('es-ES') : '—';
 const fmtDT  = (d) => d ? new Date(d).toLocaleString('es-ES')    : '—';
 
 function getStatus(c) {
-  const fin = c.used_at !== null || c.used_sessions >= c.total_sessions;
+  const fin = c.used_sessions >= c.total_sessions;
   const exp = c.expiry_date && new Date(c.expiry_date) < new Date();
   if (fin)  return 'Utilizado';
   if (exp)  return 'Vencido';

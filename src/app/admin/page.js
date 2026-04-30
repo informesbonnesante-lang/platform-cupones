@@ -97,7 +97,7 @@ export default function AdminPage() {
       (c.patient_name || '').toLowerCase().includes(q) ||
       (c.telefono || '').toLowerCase().includes(q);
 
-    const fin = c.used_at !== null || c.used_sessions >= c.total_sessions;
+    const fin = c.used_sessions >= c.total_sessions;
     const exp = isExpired(c.expiry_date);
 
     let matchStatus = true;
@@ -287,7 +287,7 @@ export default function AdminPage() {
               ) : (
                 filtered.map((c) => {
                   const exp = isExpired(c.expiry_date);
-                  const fin = c.used_at !== null || c.used_sessions >= c.total_sessions;
+                  const fin = c.used_sessions >= c.total_sessions;
                   const inUse = !fin && c.used_sessions > 0;
                   return (
                     <tr key={c.id} style={{ background: exp && !fin ? '#FEE2E2' : 'transparent' }}>

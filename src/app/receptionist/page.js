@@ -67,7 +67,7 @@ export default function ReceptionistPage() {
   };
 
   const c   = selectedCoupon;
-  const fin = c && (c.used_at !== null || c.used_sessions >= c.total_sessions);
+  const fin = c && c.used_sessions >= c.total_sessions;
   const exp = c && isExpired(c.expiry_date);
   const inUse = c && !fin && c.used_sessions > 0;
 
