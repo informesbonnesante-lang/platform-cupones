@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, usePathname } from 'next/navigation';
-import { Activity, LogOut, ShieldCheck, ClipboardList } from 'lucide-react';
+import { Activity, LogOut, ShieldCheck, ClipboardList, BarChart2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 export default function Navigation({ title }) {
@@ -67,6 +67,18 @@ export default function Navigation({ title }) {
               }}
             >
               <ClipboardList size={16} /> Validación
+            </button>
+            <button
+              onClick={() => router.push('/admin/reports')}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '0.4rem',
+                padding: '0.5rem 1rem', borderRadius: '0.375rem',
+                border: 'none', cursor: 'pointer', fontWeight: 500, fontSize: '0.9rem',
+                backgroundColor: pathname === '/admin/reports' ? '#E6F7FF' : 'transparent',
+                color: pathname === '/admin/reports' ? '#0A4275' : '#6B7280',
+              }}
+            >
+              <BarChart2 size={16} /> Reportes
             </button>
           </>
         )}

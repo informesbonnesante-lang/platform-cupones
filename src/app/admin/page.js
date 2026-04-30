@@ -5,6 +5,7 @@ import { PlusCircle, Search, DollarSign, Hash } from 'lucide-react';
 import { getCoupons, saveCoupon, generateUINumber } from '../../lib/api';
 
 const INITIAL_FORM = {
+  ui_number_manual: '',
   patient_name: '',
   patient_ci: '',
   telefono: '',
@@ -49,7 +50,11 @@ export default function AdminPage() {
     const results    = [];
 
     for (let i = 0; i < qty; i++) {
-      const uiNumber = await generateUINumber();
+      // Si el usuario ingresó un número manual y es un solo cupón, usarlo; si no, auto-generar
+      const uiNumber =
+        formData.ui_number_manual.trim() !== '' && qty === 1
+          ? formData.ui_number_manual.trim()
+          : await generateUINumber();
       const coupon   = {
         ui_number:        uiNumber,
         code:             generateCode(),
@@ -147,6 +152,18 @@ export default function AdminPage() {
           <h2 className="mb-4">Nuevo Cupón</h2>
           <form onSubmit={handleSubmit}>
             <div className="grid-2">
+              <div className="input-group" style={{ gridColumn: '1 / -1' }}>
+                <label className="input-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Hash size={13} color="#1890FF" />
+                  N° de Servicio (UI)
+                  <span style={{ fontWeight: 400, color: '#9CA3AF', fontSize: '0.78rem' }}>
+                    — Dejar vacío para auto-generar
+                  </span>
+                </label>
+                <input type="text" className="input-field" name="ui_number_manual"
+                  value={formData.ui_number_manual} onChange={handleChange}
+                  placeholder="Ej: 20260430-001  (opcional)" />
+              </div>
               <div className="input-group">
                 <label className="input-label">Nombre del Paciente</label>
                 <input required type="text" className="input-field" name="patient_name"

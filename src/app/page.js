@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Stethoscope, Lock, User } from 'lucide-react';
 
 const USERS = [
-  { username: 'admin',     password: 'admin123',     role: 'admin' },
+  { username: 'admin',     password: 'Clinica2026cupon',     role: 'admin' },
   { username: 'recepcion', password: 'recepcion123', role: 'receptionist' },
 ];
 
@@ -95,7 +95,6 @@ export default function LoginPage() {
         </form>
 
         <div style={{ marginTop: '1.5rem', fontSize: '0.8rem', color: '#9CA3AF', borderTop: '1px solid #E5E7EB', paddingTop: '1rem' }}>
-          <div>👨‍💼 Admin: <b>admin</b> / <b>admin123</b></div>
           <div>🏥 Recepción: <b>recepcion</b> / <b>recepcion123</b></div>
         </div>
       </div>
