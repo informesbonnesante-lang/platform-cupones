@@ -6,7 +6,7 @@ import { Stethoscope, Lock, User } from 'lucide-react';
 
 const USERS = [
   { username: 'admin',     password: 'Clinica2026cupon',     role: 'admin' },
-  { username: 'recepcion', password: 'recepcion123', role: 'receptionist' },
+  { username: 'recepcion', password: 'clinica2024', role: 'receptionist' },
 ];
 
 export default function LoginPage() {
