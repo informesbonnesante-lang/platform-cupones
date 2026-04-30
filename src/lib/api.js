@@ -68,3 +68,18 @@ export const updateCoupon = async (id, updates) => {
   }
   return data;
 };
+
+// --- PACIENTES (Operaciones masivas por CI) ---
+export const updatePatientInfoByCI = async (ci, newName, newPhone) => {
+  const { data, error } = await supabase
+    .from('coupons')
+    .update({ patient_name: newName, telefono: newPhone })
+    .eq('patient_ci', ci)
+    .select();
+
+  if (error) {
+    console.error('Error al actualizar historial del paciente:', error.message);
+    return false;
+  }
+  return data;
+};

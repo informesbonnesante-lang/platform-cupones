@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { PlusCircle, Search, DollarSign, Hash } from 'lucide-react';
-import { getCoupons, saveCoupon, generateUINumber } from '../../lib/api';
+import { getCoupons, saveCoupon, generateUINumber, updatePatientInfoByCI } from '../../lib/api';
 
 const INITIAL_FORM = {
   ui_number_manual: '',
@@ -27,21 +27,21 @@ export default function AdminPage() {
   const [formData, setFormData]     = useState(INITIAL_FORM);
   const [search, setSearch]         = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [showPatientSuggestions, setShowPatientSuggestions] = useState(false);
+  const [loadedPatientInfo, setLoadedPatientInfo] = useState(null);
 
-  // Extraer pacientes únicos del historial de cupones
-  const uniquePatients = useMemo(() => {
+  // Extraer pacientes únicos mapeados por CI para búsqueda ultra rápida
+  const uniquePatientsMap = useMemo(() => {
     const map = new Map();
     coupons.forEach(c => {
-      if (c.patient_name && !map.has(c.patient_name.toLowerCase())) {
-        map.set(c.patient_name.toLowerCase(), {
+      if (c.patient_ci && !map.has(c.patient_ci)) {
+        map.set(c.patient_ci, {
           name: c.patient_name,
           ci: c.patient_ci,
           telefono: c.telefono
         });
       }
     });
-    return Array.from(map.values());
+    return map;
   }, [coupons]);
 
   useEffect(() => {
@@ -51,8 +51,22 @@ export default function AdminPage() {
     });
   }, []);
 
-  const handleChange = (e) =>
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    
+    if (name === 'patient_ci') {
+      const match = uniquePatientsMap.get(value.trim());
+      if (match) {
+        setFormData(prev => ({ ...prev, patient_ci: value, patient_name: match.name, telefono: match.telefono }));
+        setLoadedPatientInfo(match);
+      } else {
+        setFormData(prev => ({ ...prev, patient_ci: value }));
+        if (loadedPatientInfo) setLoadedPatientInfo(null);
+      }
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
+  };
 
   const generateCode = () =>
     'VALE-' + Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -60,6 +74,29 @@ export default function AdminPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSaving(true);
+
+    // --- CHECK: Conflicto de CI ---
+    if (loadedPatientInfo && formData.patient_name.trim() !== loadedPatientInfo.name) {
+      const confirmUpdate = window.confirm(
+        `Atención: El número de CI ${formData.patient_ci} ya está registrado a nombre de "${loadedPatientInfo.name}".\n\n¿Desea actualizar todos los registros previos para que queden a nombre de "${formData.patient_name.trim()}"?`
+      );
+      
+      if (confirmUpdate) {
+        // Actualizamos DB
+        await updatePatientInfoByCI(formData.patient_ci, formData.patient_name.trim(), formData.telefono.trim());
+        // Actualizamos el estado local
+        setCoupons(prev => prev.map(c => 
+          c.patient_ci === formData.patient_ci 
+            ? { ...c, patient_name: formData.patient_name.trim(), telefono: formData.telefono.trim() } 
+            : c
+        ));
+        setLoadedPatientInfo({ ...loadedPatientInfo, name: formData.patient_name.trim(), telefono: formData.telefono.trim() });
+      } else {
+        setIsSaving(false);
+        return;
+      }
+    }
+    // --- FIN CHECK ---
 
     const qty        = parseInt(formData.quantity) || 1;
     const createdBy  = localStorage.getItem('medcupon_user') || 'Administrador';
@@ -180,62 +217,6 @@ export default function AdminPage() {
                   value={formData.ui_number_manual} onChange={handleChange}
                   placeholder="Ej: 20260430-001  (opcional)" />
               </div>
-              <div className="input-group" style={{ position: 'relative' }}>
-                <label className="input-label">Nombre del Paciente</label>
-                <input required type="text" className="input-field" name="patient_name"
-                  value={formData.patient_name} 
-                  onChange={(e) => {
-                    handleChange(e);
-                    setShowPatientSuggestions(true);
-                  }}
-                  onFocus={() => setShowPatientSuggestions(true)}
-                  onBlur={() => setShowPatientSuggestions(false)}
-                  autoComplete="off"
-                  placeholder="Ej: María García" />
-                
-                {/* Dropdown de Autocompletado */}
-                {showPatientSuggestions && formData.patient_name && (
-                  <div style={{
-                    position: 'absolute', top: '100%', left: 0, right: 0,
-                    background: '#fff', border: '1px solid #E5E7EB',
-                    borderRadius: '0.375rem', zIndex: 50,
-                    maxHeight: '180px', overflowY: 'auto',
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                  }}>
-                    {uniquePatients
-                      .filter(p => p.name.toLowerCase().includes(formData.patient_name.toLowerCase()))
-                      .slice(0, 10)
-                      .map((p, idx) => (
-                        <div key={idx} 
-                          onMouseDown={(e) => {
-                            e.preventDefault(); // Evita que el input pierda el foco
-                            setFormData(prev => ({
-                              ...prev,
-                              patient_name: p.name,
-                              patient_ci: p.ci,
-                              telefono: p.telefono
-                            }));
-                            setShowPatientSuggestions(false);
-                          }}
-                          style={{
-                            padding: '0.75rem', borderBottom: '1px solid #F3F4F6',
-                            cursor: 'pointer', transition: 'background 0.2s'
-                          }}
-                          onMouseEnter={(e) => e.currentTarget.style.background = '#F3F4F6'}
-                          onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                        >
-                          <div style={{ fontWeight: 600, color: '#1F2937', fontSize: '0.9rem' }}>{p.name}</div>
-                          <div style={{ fontSize: '0.75rem', color: '#6B7280' }}>CI: {p.ci} • Tel: {p.telefono}</div>
-                        </div>
-                      ))}
-                      {uniquePatients.filter(p => p.name.toLowerCase().includes(formData.patient_name.toLowerCase())).length === 0 && (
-                        <div style={{ padding: '0.75rem', fontSize: '0.85rem', color: '#6B7280', fontStyle: 'italic', textAlign: 'center' }}>
-                          ✨ Paciente nuevo.
-                        </div>
-                      )}
-                  </div>
-                )}
-              </div>
               <div className="input-group">
                 <label className="input-label">CI del Paciente</label>
                 <input required type="text" className="input-field" name="patient_ci"
@@ -243,10 +224,26 @@ export default function AdminPage() {
                   placeholder="Ej: 4567890" />
               </div>
               <div className="input-group">
-                <label className="input-label">Teléfono / WhatsApp</label>
+                <label className="input-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  Nombre del Paciente
+                  {loadedPatientInfo && <span style={{ fontSize: '0.75rem', color: '#059669', fontWeight: 600 }}>✅ Datos cargados</span>}
+                </label>
+                <input required type="text" className="input-field" name="patient_name"
+                  value={formData.patient_name} onChange={handleChange}
+                  placeholder="Ej: María García" 
+                  style={loadedPatientInfo ? { backgroundColor: '#F0FDF4', borderColor: '#BBF7D0' } : {}}
+                />
+              </div>
+              <div className="input-group">
+                <label className="input-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  Teléfono / WhatsApp
+                  {loadedPatientInfo && <span style={{ fontSize: '0.75rem', color: '#059669', fontWeight: 600 }}>✅ Datos cargados</span>}
+                </label>
                 <input required type="text" className="input-field" name="telefono"
                   value={formData.telefono} onChange={handleChange}
-                  placeholder="Ej: 0981234567" />
+                  placeholder="Ej: 0981234567" 
+                  style={loadedPatientInfo ? { backgroundColor: '#F0FDF4', borderColor: '#BBF7D0' } : {}}
+                />
               </div>
               <div className="input-group">
                 <label className="input-label">Categoría del Servicio</label>
