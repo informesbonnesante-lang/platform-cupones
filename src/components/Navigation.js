@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, usePathname } from 'next/navigation';
-import { Activity, LogOut, ShieldCheck, ClipboardList, BarChart2 } from 'lucide-react';
+import { Activity, LogOut, ShieldCheck, ClipboardList, BarChart2, Package } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 export default function Navigation({ title }) {
@@ -57,6 +57,18 @@ export default function Navigation({ title }) {
               <ShieldCheck size={16} /> Administración
             </button>
             <button
+              onClick={() => router.push('/admin/packages')}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '0.4rem',
+                padding: '0.5rem 1rem', borderRadius: '0.375rem',
+                border: 'none', cursor: 'pointer', fontWeight: 500, fontSize: '0.9rem',
+                backgroundColor: pathname === '/admin/packages' ? '#E6F7FF' : 'transparent',
+                color: pathname === '/admin/packages' ? '#0A4275' : '#6B7280',
+              }}
+            >
+              <ClipboardList size={16} /> Paquetes
+            </button>
+            <button
               onClick={() => router.push('/receptionist')}
               style={{
                 display: 'flex', alignItems: 'center', gap: '0.4rem',
@@ -82,6 +94,19 @@ export default function Navigation({ title }) {
             </button>
           </>
         )}
+
+        <button
+          onClick={() => router.push('/inventory')}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '0.4rem',
+            padding: '0.5rem 1rem', borderRadius: '0.375rem',
+            border: 'none', cursor: 'pointer', fontWeight: 500, fontSize: '0.9rem',
+            backgroundColor: pathname === '/inventory' ? '#E6F7FF' : 'transparent',
+            color: pathname === '/inventory' ? '#0A4275' : '#6B7280',
+          }}
+        >
+          <Package size={16} /> Stock Control
+        </button>
 
         {/* Usuario + Logout */}
         <div style={{ marginLeft: '1rem', display: 'flex', alignItems: 'center', gap: '1rem', borderLeft: '1px solid #E5E7EB', paddingLeft: '1rem' }}>

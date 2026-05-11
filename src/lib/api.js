@@ -54,6 +54,19 @@ export const saveCoupon = async (coupon) => {
   return data;
 };
 
+export const saveCouponsBatch = async (couponsArray) => {
+  const { data, error } = await supabase
+    .from('coupons')
+    .insert(couponsArray)
+    .select();
+
+  if (error) {
+    console.error('Error al guardar cupones en bloque:', error.message);
+    return null;
+  }
+  return data;
+};
+
 export const updateCoupon = async (id, updates) => {
   const { data, error } = await supabase
     .from('coupons')
@@ -83,3 +96,44 @@ export const updatePatientInfoByCI = async (ci, newName, newPhone) => {
   }
   return data;
 };
+
+// --- PAQUETES (Packages) ---
+export const getPackages = async () => {
+  const { data, error } = await supabase
+    .from('packages')
+    .select('*')
+    .order('name', { ascending: true });
+
+  if (error) {
+    console.error('Error al obtener paquetes:', error.message);
+    return [];
+  }
+  return data || [];
+};
+
+export const savePackage = async (pkg) => {
+  let req;
+  if (pkg.id) {
+    req = supabase.from('packages').update(pkg).eq('id', pkg.id);
+  } else {
+    req = supabase.from('packages').insert([pkg]);
+  }
+  
+  const { data, error } = await req.select().single();
+  
+  if (error) {
+    console.error('Error al guardar paquete:', error.message);
+    return null;
+  }
+  return data;
+};
+
+export const deletePackage = async (id) => {
+  const { error } = await supabase.from('packages').delete().eq('id', id);
+  if (error) {
+    console.error('Error al eliminar paquete:', error.message);
+    return false;
+  }
+  return true;
+};
+

@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { PlusCircle, Search, DollarSign, Hash } from 'lucide-react';
-import { getCoupons, saveCoupon, generateUINumber, updatePatientInfoByCI } from '../../lib/api';
+import { PlusCircle, Search, DollarSign, Hash, Package } from 'lucide-react';
+import { getCoupons, saveCoupon, generateUINumber, updatePatientInfoByCI, getPackages, saveCouponsBatch } from '../../lib/api';
 
 const INITIAL_FORM = {
   ui_number_manual: '',
@@ -21,6 +21,7 @@ const INITIAL_FORM = {
 
 export default function AdminPage() {
   const [coupons, setCoupons]       = useState([]);
+  const [packages, setPackages]     = useState([]);
   const [showForm, setShowForm]     = useState(false);
   const [isLoading, setIsLoading]   = useState(true);
   const [isSaving, setIsSaving]     = useState(false);
@@ -28,6 +29,13 @@ export default function AdminPage() {
   const [search, setSearch]         = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [loadedPatientInfo, setLoadedPatientInfo] = useState(null);
+
+  const [emissionType, setEmissionType] = useState('individual'); // 'individual' or 'package'
+  const [selectedPackageId, setSelectedPackageId] = useState('');
+  
+  // Estado para paquete personalizado manual
+  const [customPackageName, setCustomPackageName] = useState('');
+  const [customItems, setCustomItems] = useState([{ category: '', detail: '', sessions: 1 }]);
 
   // Extraer pacientes únicos mapeados por CI para búsqueda ultra rápida
   const uniquePatientsMap = useMemo(() => {
@@ -45,8 +53,9 @@ export default function AdminPage() {
   }, [coupons]);
 
   useEffect(() => {
-    getCoupons().then((data) => {
-      setCoupons(data);
+    Promise.all([getCoupons(), getPackages()]).then(([couponsData, pkgsData]) => {
+      setCoupons(couponsData);
+      setPackages(pkgsData);
       setIsLoading(false);
     });
   }, []);
@@ -82,9 +91,7 @@ export default function AdminPage() {
       );
       
       if (confirmUpdate) {
-        // Actualizamos DB
         await updatePatientInfoByCI(formData.patient_ci, formData.patient_name.trim(), formData.telefono.trim());
-        // Actualizamos el estado local
         setCoupons(prev => prev.map(c => 
           c.patient_ci === formData.patient_ci 
             ? { ...c, patient_name: formData.patient_name.trim(), telefono: formData.telefono.trim() } 
@@ -96,40 +103,93 @@ export default function AdminPage() {
         return;
       }
     }
-    // --- FIN CHECK ---
 
-    const qty        = parseInt(formData.quantity) || 1;
-    const createdBy  = localStorage.getItem('medcupon_user') || 'Administrador';
-    const results    = [];
+    const createdBy = localStorage.getItem('medcupon_user') || 'Administrador';
+    let results = [];
 
-    for (let i = 0; i < qty; i++) {
-      // Si el usuario ingresó un número manual y es un solo cupón, usarlo; si no, auto-generar
-      const uiNumber =
-        formData.ui_number_manual.trim() !== '' && qty === 1
-          ? formData.ui_number_manual.trim()
-          : await generateUINumber();
-      const coupon   = {
-        ui_number:        uiNumber,
-        code:             generateCode(),
-        patient_name:     formData.patient_name,
-        patient_ci:       formData.patient_ci,
-        telefono:         formData.telefono,
-        service_category: formData.service_category,
-        service_detail:   formData.service_detail,
-        expiry_date:      formData.expiry_date,
-        payment_option:   formData.payment_option,
-        payment_status:   formData.payment_status,
-        monto_pagado:
-          formData.payment_status === 'Parcial'
-            ? parseFloat(formData.monto_pagado)
-            : null,
-        total_sessions: parseInt(formData.total_sessions) || 1,
-        used_sessions:  0,
-        created_by:     createdBy,
-        used_at:        null,
-      };
-      const saved = await saveCoupon(coupon);
-      if (saved) results.push(saved);
+    if (emissionType === 'package') {
+      let pkgItems = [];
+      let pkgName = '';
+
+      if (selectedPackageId === 'custom') {
+        if (!customPackageName.trim()) {
+          alert("Por favor, ingrese un nombre para el paquete personalizado.");
+          setIsSaving(false); return;
+        }
+        for (let i = 0; i < customItems.length; i++) {
+          if (!customItems[i].category || !customItems[i].detail || customItems[i].sessions < 1) {
+            alert(`Por favor, complete todos los campos del servicio #${i+1} en el paquete personalizado.`);
+            setIsSaving(false); return;
+          }
+        }
+        pkgItems = customItems;
+        pkgName = customPackageName;
+      } else {
+        const pkg = packages.find(p => p.id === selectedPackageId);
+        if (!pkg) {
+          alert("Debe seleccionar un paquete.");
+          setIsSaving(false); return;
+        }
+        pkgItems = pkg.items;
+        pkgName = pkg.name;
+      }
+
+      const packageGroupId = crypto.randomUUID();
+      const baseUiNumber = formData.ui_number_manual.trim() !== '' ? formData.ui_number_manual.trim() : await generateUINumber();
+      
+      const newCoupons = pkgItems.map((item, index) => ({
+        ui_number: `${baseUiNumber}-${index + 1}`, // Sufijo interno para base de datos
+        code: generateCode(),
+        patient_name: formData.patient_name,
+        patient_ci: formData.patient_ci,
+        telefono: formData.telefono,
+        service_category: item.category,
+        service_detail: item.detail,
+        expiry_date: formData.expiry_date,
+        payment_option: formData.payment_option,
+        payment_status: formData.payment_status,
+        monto_pagado: formData.payment_status === 'Parcial' ? parseFloat(formData.monto_pagado) : null,
+        total_sessions: parseInt(item.sessions) || 1,
+        used_sessions: 0,
+        created_by: createdBy,
+        used_at: null,
+        package_group_id: packageGroupId,
+        package_name: pkgName
+      }));
+
+      const savedBatch = await saveCouponsBatch(newCoupons);
+      if (savedBatch) results = savedBatch;
+
+    } else {
+      // Emisión individual
+      const qty = parseInt(formData.quantity) || 1;
+      for (let i = 0; i < qty; i++) {
+        const uiNumber = formData.ui_number_manual.trim() !== '' && qty === 1
+            ? formData.ui_number_manual.trim()
+            : await generateUINumber();
+        
+        const coupon = {
+          ui_number: uiNumber,
+          code: generateCode(),
+          patient_name: formData.patient_name,
+          patient_ci: formData.patient_ci,
+          telefono: formData.telefono,
+          service_category: formData.service_category,
+          service_detail: formData.service_detail,
+          expiry_date: formData.expiry_date,
+          payment_option: formData.payment_option,
+          payment_status: formData.payment_status,
+          monto_pagado: formData.payment_status === 'Parcial' ? parseFloat(formData.monto_pagado) : null,
+          total_sessions: parseInt(formData.total_sessions) || 1,
+          used_sessions: 0,
+          created_by: createdBy,
+          used_at: null,
+          package_group_id: null,
+          package_name: null
+        };
+        const saved = await saveCoupon(coupon);
+        if (saved) results.push(saved);
+      }
     }
 
     setCoupons([...results, ...coupons]);
@@ -140,15 +200,29 @@ export default function AdminPage() {
 
   const isExpired = (d) => d && new Date(d) < new Date();
 
+  // Helper para mostrar el ui_number real ocultando el sufijo
+  const displayUINumber = (ui_number) => {
+    if (!ui_number) return '';
+    // Si tiene un formato base-index (ej: 20260504-001-1), extraemos solo la base
+    const parts = ui_number.split('-');
+    if (parts.length >= 3) {
+      return `${parts[0]}-${parts[1]}`;
+    }
+    return ui_number;
+  };
+
   const filtered = coupons.filter((c) => {
     const q = search.toLowerCase();
+    const displayUI = displayUINumber(c.ui_number).toLowerCase();
+    
     const matchSearch =
       !q ||
-      (c.ui_number || '').toLowerCase().includes(q) ||
+      displayUI.includes(q) ||
       c.code.toLowerCase().includes(q) ||
       c.patient_ci.toLowerCase().includes(q) ||
       (c.patient_name || '').toLowerCase().includes(q) ||
-      (c.telefono || '').toLowerCase().includes(q);
+      (c.telefono || '').toLowerCase().includes(q) ||
+      (c.package_name || '').toLowerCase().includes(q);
 
     const fin = c.used_sessions >= c.total_sessions;
     const exp = isExpired(c.expiry_date);
@@ -169,7 +243,7 @@ export default function AdminPage() {
         <h1 style={{ margin: 0 }}>Gestión de Cupones</h1>
         <button className="btn-primary" onClick={() => setShowForm(!showForm)}>
           <PlusCircle size={18} />
-          {showForm ? 'Ocultar' : 'Nuevo Cupón'}
+          {showForm ? 'Ocultar' : 'Nuevo Cupón/Paquete'}
         </button>
       </div>
 
@@ -202,13 +276,43 @@ export default function AdminPage() {
       {/* Formulario */}
       {showForm && (
         <div className="card mb-6" style={{ borderTop: '4px solid #1890FF' }}>
-          <h2 className="mb-4">Nuevo Cupón</h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+            <h2 style={{ margin: 0 }}>Emitir Servicio</h2>
+            <div style={{ display: 'flex', background: '#F3F4F6', borderRadius: '0.5rem', padding: '0.25rem' }}>
+              <button 
+                type="button"
+                onClick={() => setEmissionType('individual')}
+                style={{ 
+                  padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer', fontWeight: 600,
+                  background: emissionType === 'individual' ? '#fff' : 'transparent',
+                  color: emissionType === 'individual' ? '#1890FF' : '#6B7280',
+                  boxShadow: emissionType === 'individual' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+                }}
+              >
+                Servicio Individual
+              </button>
+              <button 
+                type="button"
+                onClick={() => setEmissionType('package')}
+                style={{ 
+                  padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.4rem',
+                  background: emissionType === 'package' ? '#fff' : 'transparent',
+                  color: emissionType === 'package' ? '#1890FF' : '#6B7280',
+                  boxShadow: emissionType === 'package' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+                }}
+              >
+                <Package size={16} /> Paquete
+              </button>
+            </div>
+          </div>
+
           <form onSubmit={handleSubmit}>
             <div className="grid-2">
+              
               <div className="input-group" style={{ gridColumn: '1 / -1' }}>
                 <label className="input-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <Hash size={13} color="#1890FF" />
-                  N° de Servicio (UI)
+                  N° de Servicio Compartido (UI)
                   <span style={{ fontWeight: 400, color: '#9CA3AF', fontSize: '0.78rem' }}>
                     — Dejar vacío para auto-generar
                   </span>
@@ -217,6 +321,8 @@ export default function AdminPage() {
                   value={formData.ui_number_manual} onChange={handleChange}
                   placeholder="Ej: 20260430-001  (opcional)" />
               </div>
+
+              {/* Patient details */}
               <div className="input-group">
                 <label className="input-label">CI del Paciente</label>
                 <input required type="text" className="input-field" name="patient_ci"
@@ -245,27 +351,100 @@ export default function AdminPage() {
                   style={loadedPatientInfo ? { backgroundColor: '#F0FDF4', borderColor: '#BBF7D0' } : {}}
                 />
               </div>
+
+              {emissionType === 'package' ? (
+                <>
+                  <div className="input-group" style={{ gridColumn: '1 / -1' }}>
+                    <label className="input-label">Seleccionar Paquete Maestro</label>
+                    <select required className="input-field" value={selectedPackageId} onChange={(e) => setSelectedPackageId(e.target.value)}>
+                      <option value="">-- Elija un paquete --</option>
+                      {packages.map(p => (
+                        <option key={p.id} value={p.id}>{p.name} ({p.items?.length || 0} servicios)</option>
+                      ))}
+                      <option value="custom" style={{ fontWeight: 'bold', color: '#1890FF' }}>➕ Crear Paquete Personalizado (Manual)</option>
+                    </select>
+                  </div>
+
+                  {selectedPackageId === 'custom' && (
+                    <div style={{ gridColumn: '1 / -1', background: '#F0F9FF', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1rem', border: '1px solid #BAE6FD' }}>
+                      <div className="input-group" style={{ marginBottom: '1rem' }}>
+                        <label className="input-label">Nombre del Paquete Personalizado</label>
+                        <input required type="text" className="input-field" 
+                          value={customPackageName} onChange={(e) => setCustomPackageName(e.target.value)}
+                          placeholder="Ej: Promo Verano, Combo Especial..." />
+                      </div>
+                      <h4 style={{ margin: '0 0 0.5rem 0', color: '#0369A1' }}>Añadir Servicios al Paquete:</h4>
+                      {customItems.map((item, idx) => (
+                        <div key={idx} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                          <input required type="text" className="input-field" placeholder="Categoría" style={{ flex: 1 }}
+                            value={item.category} onChange={(e) => {
+                              const newArr = [...customItems]; newArr[idx].category = e.target.value; setCustomItems(newArr);
+                            }} />
+                          <input required type="text" className="input-field" placeholder="Detalle del Servicio" style={{ flex: 2 }}
+                            value={item.detail} onChange={(e) => {
+                              const newArr = [...customItems]; newArr[idx].detail = e.target.value; setCustomItems(newArr);
+                            }} />
+                          <input required type="number" min="1" className="input-field" placeholder="Sesiones" style={{ width: '80px' }}
+                            value={item.sessions} onChange={(e) => {
+                              const newArr = [...customItems]; newArr[idx].sessions = parseInt(e.target.value)||1; setCustomItems(newArr);
+                            }} />
+                          {customItems.length > 1 && (
+                            <button type="button" onClick={() => {
+                              const newArr = [...customItems]; newArr.splice(idx, 1); setCustomItems(newArr);
+                            }} style={{ background: '#FEE2E2', color: '#EF4444', border: 'none', borderRadius: '0.375rem', padding: '0 0.5rem', cursor: 'pointer' }}>X</button>
+                          )}
+                        </div>
+                      ))}
+                      <button type="button" onClick={() => setCustomItems([...customItems, { category: '', detail: '', sessions: 1 }])}
+                        style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: '#0284C7', background: 'transparent', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
+                        + Añadir otro servicio a este paquete
+                      </button>
+                    </div>
+                  )}
+
+                  {selectedPackageId && selectedPackageId !== 'custom' && (
+                    <div style={{ gridColumn: '1 / -1', background: '#F8FAFC', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1rem', border: '1px solid #E2E8F0' }}>
+                      <h4 style={{ margin: '0 0 0.5rem 0', color: '#374151' }}>Servicios que se generarán automáticamente:</h4>
+                      <ul style={{ margin: 0, paddingLeft: '1.2rem', color: '#6B7280', fontSize: '0.9rem' }}>
+                        {packages.find(p => p.id === selectedPackageId)?.items?.map((it, idx) => (
+                          <li key={idx}><strong>{it.detail}</strong> ({it.sessions} sesion/es) - {it.category}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  <div className="input-group">
+                    <label className="input-label">Categoría del Servicio</label>
+                    <input required type="text" className="input-field" name="service_category"
+                      value={formData.service_category} onChange={handleChange}
+                      placeholder="Ej: Kinesiología" />
+                  </div>
+                  <div className="input-group">
+                    <label className="input-label">Detalle del Servicio</label>
+                    <input required type="text" className="input-field" name="service_detail"
+                      value={formData.service_detail} onChange={handleChange}
+                      placeholder="Ej: Masajes Terapéuticos" />
+                  </div>
+                  <div className="input-group">
+                    <label className="input-label">Sesiones Totales</label>
+                    <input required type="number" min="1" className="input-field" name="total_sessions"
+                      value={formData.total_sessions} onChange={handleChange} />
+                  </div>
+                  <div className="input-group">
+                    <label className="input-label">Cantidad a Generar (Copias del mismo)</label>
+                    <input required type="number" min="1" max="50" className="input-field"
+                      name="quantity" value={formData.quantity} onChange={handleChange} />
+                  </div>
+                </>
+              )}
+
+              {/* Shared payment/date logic */}
               <div className="input-group">
-                <label className="input-label">Categoría del Servicio</label>
-                <input required type="text" className="input-field" name="service_category"
-                  value={formData.service_category} onChange={handleChange}
-                  placeholder="Ej: Kinesiología" />
-              </div>
-              <div className="input-group">
-                <label className="input-label">Detalle del Servicio</label>
-                <input required type="text" className="input-field" name="service_detail"
-                  value={formData.service_detail} onChange={handleChange}
-                  placeholder="Ej: Masajes Terapéuticos" />
-              </div>
-              <div className="input-group">
-                <label className="input-label">Fecha de Vencimiento</label>
+                <label className="input-label">Fecha de Vencimiento (General)</label>
                 <input required type="date" className="input-field" name="expiry_date"
                   value={formData.expiry_date} onChange={handleChange} />
-              </div>
-              <div className="input-group">
-                <label className="input-label">Sesiones Totales</label>
-                <input required type="number" min="1" className="input-field" name="total_sessions"
-                  value={formData.total_sessions} onChange={handleChange} />
               </div>
               <div className="input-group">
                 <label className="input-label">Opción de Pago</label>
@@ -293,15 +472,11 @@ export default function AdminPage() {
                     placeholder="Ej: 50000" />
                 </div>
               )}
-              <div className="input-group">
-                <label className="input-label">Cantidad a Generar</label>
-                <input required type="number" min="1" max="50" className="input-field"
-                  name="quantity" value={formData.quantity} onChange={handleChange} />
-              </div>
+              
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
-              <button type="submit" className="btn-primary" disabled={isSaving}>
-                {isSaving ? 'Guardando...' : 'Guardar Cupón(es)'}
+              <button type="submit" className="btn-primary" disabled={isSaving || (emissionType === 'package' && !selectedPackageId)}>
+                {isSaving ? 'Generando...' : emissionType === 'package' ? 'Generar Paquete Completo' : 'Guardar Cupón'}
               </button>
             </div>
           </form>
@@ -314,7 +489,7 @@ export default function AdminPage() {
           <div style={{ flex: 1, minWidth: '220px', position: 'relative' }}>
             <Search size={16} style={{ position: 'absolute', left: '0.9rem', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
             <input type="text" className="input-field"
-              placeholder="Buscar por N° Servicio, CI, Nombre o Teléfono..."
+              placeholder="Buscar por N° Servicio, CI, Nombre, Paquete o Teléfono..."
               value={search} onChange={(e) => setSearch(e.target.value)}
               style={{ paddingLeft: '2.5rem' }} />
           </div>
@@ -334,7 +509,7 @@ export default function AdminPage() {
               <tr>
                 <th>N° Servicio</th>
                 <th>Paciente</th>
-                <th>Servicio</th>
+                <th>Servicio / Paquete</th>
                 <th>Sesiones</th>
                 <th>Estado</th>
                 <th>Vencimiento</th>
@@ -358,7 +533,7 @@ export default function AdminPage() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                           <Hash size={13} color="#1890FF" />
                           <span style={{ fontWeight: 700, color: '#0A4275', fontFamily: 'monospace' }}>
-                            {c.ui_number || c.code}
+                            {displayUINumber(c.ui_number) || c.code}
                           </span>
                         </div>
                       </td>
@@ -368,8 +543,10 @@ export default function AdminPage() {
                         <div style={{ fontSize: '0.75rem', color: '#6B7280' }}>Tel: {c.telefono}</div>
                       </td>
                       <td>
-                        <div style={{ fontSize: '0.72rem', color: '#6B7280', textTransform: 'uppercase', fontWeight: 600 }}>{c.service_category}</div>
-                        <div>{c.service_detail}</div>
+                        <div style={{ fontSize: '0.72rem', color: c.package_name ? '#10B981' : '#6B7280', textTransform: 'uppercase', fontWeight: 600 }}>
+                          {c.package_name ? `📦 ${c.package_name}` : c.service_category}
+                        </div>
+                        <div style={{ fontWeight: c.package_name ? 500 : 'normal' }}>{c.service_detail}</div>
                       </td>
                       <td style={{ textAlign: 'center', fontWeight: 700, color: '#1890FF' }}>
                         {c.used_sessions}/{c.total_sessions}
