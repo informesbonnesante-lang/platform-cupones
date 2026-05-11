@@ -31,7 +31,7 @@ const EntryForm = ({ inventory, onSubmit }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!header.proveedor || items.some(i => !i.itemId || i.cantidadIngresada <= 0 || !i.vencimiento)) {
-      alert('Favor completar todos los datos: Proveedor, Ãtems y sus correspondientes Fechas de Vencimiento (Obligatario)');
+      alert('Favor completar todos los datos: Proveedor, Ítems y sus correspondientes Fechas de Vencimiento (Obligatario)');
       return;
     }
     onSubmit({ ...header, items });
@@ -46,7 +46,7 @@ const EntryForm = ({ inventory, onSubmit }) => {
 
   return (
     <div className="glass-card" style={{ maxWidth: '1000px', margin: '0 auto', padding: '2.5rem' }}>
-      <h2 style={{ marginBottom: '2rem', textAlign: 'center', color: 'var(--primary-dark)' }}>Ingreso de MercaderÃ­a (Carga Masiva con Vencimiento)</h2>
+      <h2 style={{ marginBottom: '2rem', textAlign: 'center', color: 'var(--primary-dark)' }}>Ingreso de Mercadería (Carga Masiva con Vencimiento)</h2>
       
       <form onSubmit={handleSubmit}>
         {/* Header Section */}
@@ -56,7 +56,7 @@ const EntryForm = ({ inventory, onSubmit }) => {
               <Truck size={16} /> Proveedor
             </label>
             <input 
-              type="text" className="input-field" placeholder="Nombre Comercial / RazÃ³n Social"
+              type="text" className="input-field" placeholder="Nombre Comercial / Razón Social"
               value={header.proveedor} onChange={(e) => setHeader({...header, proveedor: e.target.value})}
             />
           </div>
@@ -76,10 +76,10 @@ const EntryForm = ({ inventory, onSubmit }) => {
           <table style={{ width: '100%' }}>
             <thead style={{ background: 'var(--background)' }}>
               <tr>
-                <th style={{ width: '40%' }}>Ãtem / Producto</th>
+                <th style={{ width: '40%' }}>Ítem / Producto</th>
                 <th style={{ width: '15%' }}>Cantidad</th>
                 <th style={{ width: '30%' }}>Vencimiento (Oblig.)</th>
-                <th style={{ width: '15%', textAlign: 'center' }}>AcciÃ³n</th>
+                <th style={{ width: '15%', textAlign: 'center' }}>Acción</th>
               </tr>
             </thead>
             <tbody>
@@ -126,7 +126,7 @@ const EntryForm = ({ inventory, onSubmit }) => {
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <button type="button" onClick={addRow} className="btn btn-secondary" style={{ gap: '0.5rem' }}>
-            <Plus size={18} /> AÃ±adir Fila
+            <Plus size={18} /> Añadir Fila
           </button>
           
           <button type="submit" className="btn btn-primary" style={{ padding: '0.75rem 2.5rem', background: 'var(--primary-light)' }}>
@@ -139,4 +139,3 @@ const EntryForm = ({ inventory, onSubmit }) => {
 };
 
 export default EntryForm;
-

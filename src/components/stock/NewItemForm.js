@@ -12,9 +12,9 @@ const NewItemForm = ({ onAddItem }) => {
     stock_inicial: 0
   });
 
-  const categories = ['MEDICAMENTOS', 'ESTÃ‰TICA', 'INSUMOS', 'DESCARTABLES', 'ACTIVOS'];
+  const categories = ['MEDICAMENTOS', 'ESTÉTICA', 'INSUMOS', 'DESCARTABLES', 'ACTIVOS'];
   const units = ['UNIDAD', 'CAJA', 'FRASCO', 'AMPOLLA', 'ML', 'G', 'BLISTER', 'PAQUETE'];
-  const areas = ['FARMACIA', 'ESTÃ‰TICA', 'ENFERMERÃA', 'RECEPCIÃ“N', 'LABORATORIO'];
+  const areas = ['FARMACIA', 'ESTÉTICA', 'ENFERMERÍA', 'RECEPCIÓN', 'LABORATORIO'];
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -25,14 +25,14 @@ const NewItemForm = ({ onAddItem }) => {
     const timestamp = new Date().toLocaleString();
     const logContent = `
 ==============================================
-NUEVO ÃTEM REGISTRADO EN CATÃLOGO
+NUEVO ÍTEM REGISTRADO EN CATÁLOGO
 ==============================================
 Fecha/Hora: ${timestamp}
 ID: ${item.id}
 Nombre: ${item.nombre}
-CategorÃ­a: ${item.categoria}
+Categoría: ${item.categoria}
 Unidad: ${item.unidad}
-Ãrea Asignada: ${item.area}
+Área Asignada: ${item.area}
 Stock Inicial: ${item.stock_inicial}
 Stock Actual: ${item.current_stock}
 ==============================================
@@ -52,7 +52,7 @@ Stock Actual: ${item.current_stock}
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.nombre.trim()) {
-      alert('Por favor, ingrese el nombre del Ã­tem.');
+      alert('Por favor, ingrese el nombre del ítem.');
       return;
     }
 
@@ -80,7 +80,7 @@ Stock Actual: ${item.current_stock}
       stock_inicial: 0
     });
 
-    alert('Ãtem aÃ±adido al catÃ¡logo y log generado con Stock Inicial.');
+    alert('Ítem añadido al catálogo y log generado con Stock Inicial.');
   };
 
   return (
@@ -99,20 +99,20 @@ Stock Actual: ${item.current_stock}
         }}>
           <PackagePlus size={32} />
         </div>
-        <h2 style={{ color: 'var(--primary-dark)', fontSize: '1.8rem' }}>AÃ±adir Nuevo Ãtem al CatÃ¡logo</h2>
+        <h2 style={{ color: 'var(--primary-dark)', fontSize: '1.8rem' }}>Añadir Nuevo Ítem al Catálogo</h2>
         <p style={{ color: 'var(--text-muted)' }}>Defina las propiedades base del nuevo producto</p>
       </div>
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
         <div>
           <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-main)' }}>
-            <Tag size={16} color="var(--primary)" /> Nombre del Ãtem
+            <Tag size={16} color="var(--primary)" /> Nombre del Ítem
           </label>
           <input 
             type="text" 
             name="nombre"
             className="input-field" 
-            placeholder="Ej: GASAS ESTÃ‰RILES 10X10"
+            placeholder="Ej: GASAS ESTÉRILES 10X10"
             value={formData.nombre}
             onChange={handleChange}
             required
@@ -123,7 +123,7 @@ Stock Actual: ${item.current_stock}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
           <div>
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-main)' }}>
-              <Boxes size={16} color="var(--primary)" /> CategorÃ­a
+              <Boxes size={16} color="var(--primary)" /> Categoría
             </label>
             <select 
               name="categoria"
@@ -170,7 +170,7 @@ Stock Actual: ${item.current_stock}
           </div>
           <div>
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-main)' }}>
-              <MapPin size={16} color="var(--primary)" /> Ãrea
+              <MapPin size={16} color="var(--primary)" /> Área
             </label>
             <select 
               name="area"
@@ -187,10 +187,10 @@ Stock Actual: ${item.current_stock}
 
         <div style={{ marginTop: '1rem' }}>
           <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '1rem', gap: '0.75rem' }}>
-            <Save size={20} /> Confirmar y Guardar Ãtem
+            <Save size={20} /> Confirmar y Guardar Ítem
           </button>
           <p style={{ marginTop: '1rem', fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center' }}>
-            * Al confirmar, se establecerÃ¡ el stock inicial y se generarÃ¡ un registro de auditorÃ­a local.
+            * Al confirmar, se establecerá el stock inicial y se generará un registro de auditoría local.
           </p>
         </div>
       </form>
@@ -199,4 +199,3 @@ Stock Actual: ${item.current_stock}
 };
 
 export default NewItemForm;
-

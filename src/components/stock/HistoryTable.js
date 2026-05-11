@@ -9,7 +9,7 @@ const HistoryTable = ({ consumptions, entries }) => {
   return (
     <div className="glass-card" style={{ padding: '1.5rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <h2>Trazabilidad y AuditorÃ­a</h2>
+        <h2>Trazabilidad y Auditoría</h2>
         <div style={{ display: 'flex', border: '1px solid var(--border)', borderRadius: '8px', overflow: 'hidden' }}>
           <button 
             className={`btn ${view === 'consumos' ? 'btn-primary' : 'btn-secondary'}`} 
@@ -34,7 +34,7 @@ const HistoryTable = ({ consumptions, entries }) => {
             <thead>
               <tr>
                 <th>Fecha / Hora</th>
-                <th>Ãtem</th>
+                <th>Ítem</th>
                 <th>Paciente</th>
                 <th>Cant.</th>
                 <th>Depto.</th>
@@ -73,7 +73,7 @@ const HistoryTable = ({ consumptions, entries }) => {
             <thead>
               <tr>
                 <th>Fecha / Hora</th>
-                <th>Ãtem</th>
+                <th>Ítem</th>
                 <th>Cant.</th>
                 <th>Proveedor</th>
                 <th>Factura</th>
@@ -104,4 +104,3 @@ const HistoryTable = ({ consumptions, entries }) => {
 };
 
 export default HistoryTable;
-

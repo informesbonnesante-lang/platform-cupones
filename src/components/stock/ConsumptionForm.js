@@ -7,7 +7,7 @@ const ConsumptionForm = ({ inventory, onSubmit }) => {
   const [header, setHeader] = useState({
     pacienteNombre: '',
     pacienteCi: '',
-    departamento: 'ENFERMERÃA',
+    departamento: 'ENFERMERÍA',
     categoriaPago: 'INCLUIDO EN EL SERVICIO'
   });
 
@@ -33,7 +33,7 @@ const ConsumptionForm = ({ inventory, onSubmit }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!header.pacienteNombre || !header.pacienteCi || items.some(i => !i.itemId || i.cantidad <= 0)) {
-      alert('Favor completar todos los datos del paciente e Ã­tems con cantidades vÃ¡lidas');
+      alert('Favor completar todos los datos del paciente e ítems con cantidades válidas');
       return;
     }
     onSubmit({ ...header, items });
@@ -43,14 +43,14 @@ const ConsumptionForm = ({ inventory, onSubmit }) => {
     setHeader({
       pacienteNombre: '',
       pacienteCi: '',
-      departamento: 'ENFERMERÃA',
+      departamento: 'ENFERMERÍA',
       categoriaPago: 'INCLUIDO EN EL SERVICIO'
     });
   };
 
   return (
     <div className="glass-card" style={{ maxWidth: '900px', margin: '0 auto', padding: '2.5rem' }}>
-      <h2 style={{ marginBottom: '2rem', textAlign: 'center', color: 'var(--primary)' }}>Registro de Consumo ClÃ­nico (MultilÃ­nea)</h2>
+      <h2 style={{ marginBottom: '2rem', textAlign: 'center', color: 'var(--primary)' }}>Registro de Consumo Clínico (Multilínea)</h2>
       
       <form onSubmit={handleSubmit}>
         {/* Header Section */}
@@ -78,15 +78,15 @@ const ConsumptionForm = ({ inventory, onSubmit }) => {
               className="input-field" value={header.departamento} 
               onChange={(e) => setHeader({...header, departamento: e.target.value})}
             >
-              <option value="ENFERMERÃA">ENFERMERÃA</option>
-              <option value="ADMINISTRACIÃ“N">ADMINISTRACIÃ“N</option>
-              <option value="RECEPCIÃ“N">RECEPCIÃ“N</option>
+              <option value="ENFERMERÍA">ENFERMERÍA</option>
+              <option value="ADMINISTRACIÓN">ADMINISTRACIÓN</option>
+              <option value="RECEPCIÓN">RECEPCIÓN</option>
               <option value="MANTENIMIENTO">MANTENIMIENTO</option>
             </select>
           </div>
           <div style={{ gridColumn: 'span 2' }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', fontWeight: 600, fontSize: '0.9rem' }}>
-              <CreditCard size={16} /> CategorizaciÃ³n de Pago
+              <CreditCard size={16} /> Categorización de Pago
             </label>
             <div style={{ display: 'flex', gap: '2rem' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
@@ -110,9 +110,9 @@ const ConsumptionForm = ({ inventory, onSubmit }) => {
           <table style={{ width: '100%' }}>
             <thead style={{ background: 'var(--background)' }}>
               <tr>
-                <th style={{ width: '60%' }}>Ãtem / Producto</th>
+                <th style={{ width: '60%' }}>Ítem / Producto</th>
                 <th style={{ width: '25%' }}>Cantidad</th>
-                <th style={{ width: '15%', textAlign: 'center' }}>AcciÃ³n</th>
+                <th style={{ width: '15%', textAlign: 'center' }}>Acción</th>
               </tr>
             </thead>
             <tbody>
@@ -153,7 +153,7 @@ const ConsumptionForm = ({ inventory, onSubmit }) => {
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <button type="button" onClick={addRow} className="btn btn-secondary" style={{ gap: '0.5rem' }}>
-            <Plus size={18} /> AÃ±adir Fila
+            <Plus size={18} /> Añadir Fila
           </button>
           
           <button type="submit" className="btn btn-primary" style={{ padding: '0.75rem 2.5rem' }}>
@@ -166,4 +166,3 @@ const ConsumptionForm = ({ inventory, onSubmit }) => {
 };
 
 export default ConsumptionForm;
-

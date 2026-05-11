@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState } from 'react';
 import { supabase } from './supabaseStockClient';
@@ -27,7 +27,7 @@ const Login = ({ onLogin }) => {
       // For now, assuming roles are in user_metadata or we set them up
       onLogin(data.user);
     } catch (err) {
-      setError('Credenciales invÃ¡lidas. Por favor, verifique su correo y contraseÃ±a.');
+      setError('Credenciales inválidas. Por favor, verifique su correo y contraseña.');
     } finally {
       setLoading(false);
     }
@@ -72,18 +72,18 @@ const Login = ({ onLogin }) => {
               letterSpacing: '-0.5px',
               margin: 0
             }}>
-              Bonne SantÃ©
+              Bonne Santé
             </h1>
           </div>
           <p style={{ color: 'var(--text-muted)', fontSize: '1rem' }}>
-            Plataforma de GestiÃ³n de Stock
+            Plataforma de Gestión de Stock
           </p>
         </div>
 
         <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <div>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, fontSize: '0.9rem' }}>
-              Correo ElectrÃ³nico
+              Correo Electrónico
             </label>
             <div style={{ position: 'relative' }}>
               <Mail 
@@ -104,7 +104,7 @@ const Login = ({ onLogin }) => {
 
           <div>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, fontSize: '0.9rem' }}>
-              ContraseÃ±a
+              Contraseña
             </label>
             <div style={{ position: 'relative' }}>
               <Lock 
@@ -114,7 +114,7 @@ const Login = ({ onLogin }) => {
               <input 
                 type="password" 
                 className="input-field" 
-                placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                placeholder="••••••••"
                 style={{ paddingLeft: '2.8rem' }}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -148,13 +148,13 @@ const Login = ({ onLogin }) => {
               fontSize: '1rem'
             }}
           >
-            {loading ? 'Iniciando sesiÃ³n...' : 'Ingresar al Portal'}
+            {loading ? 'Iniciando sesión...' : 'Ingresar al Portal'}
             {!loading && <ChevronRight size={20} />}
           </button>
         </form>
 
         <div style={{ marginTop: '2rem', textAlign: 'center', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-          Â¿Problemas para acceder? Contacte a Soporte IT
+          ¿Problemas para acceder? Contacte a Soporte IT
         </div>
       </div>
     </div>
@@ -162,4 +162,3 @@ const Login = ({ onLogin }) => {
 };
 
 export default Login;
-

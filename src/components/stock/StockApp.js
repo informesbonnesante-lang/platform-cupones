@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect } from 'react';
 import { LogOut } from 'lucide-react';
@@ -236,7 +236,7 @@ function App() {
           <div>
             <h1 style={{ color: 'var(--primary-dark)', margin: 0 }}>InvenMed+</h1>
             <p style={{ color: 'var(--text-muted)', margin: 0 }}>
-               SISTEMA DE GESTIÃ“N | <span className="badge badge-info">{userRole}</span>
+               SISTEMA DE GESTIÓN | <span className="badge badge-info">{userRole}</span>
             </p>
           </div>
           <div className="glass-card" style={{ padding: '0.5rem 1rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
@@ -263,4 +263,3 @@ function App() {
 }
 
 export default App;
-

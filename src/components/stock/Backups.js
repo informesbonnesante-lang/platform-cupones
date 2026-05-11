@@ -43,8 +43,8 @@ const Backups = ({ inventory, consumptions, entries }) => {
     // Format data for administrative clarity
     const dataForExcel = inventory.map(item => ({
       'Producto': item.nombre,
-      'CategorÃ­a': item.categoria,
-      'DepÃ³sito': item.area || 'GENERAL',
+      'Categoría': item.categoria,
+      'Depósito': item.area || 'GENERAL',
       'Stock Inicial': item.stock_inicial,
       'Saldo Actual': item.current_stock,
       'Unidad': item.unidad,
@@ -62,13 +62,13 @@ const Backups = ({ inventory, consumptions, entries }) => {
     const doc = new jsPDF();
     doc.setFontSize(18);
     doc.setTextColor(16, 163, 150); // Institutional primary
-    doc.text("BONNE SANTÃ‰ - REPORTE DE INVENTARIO", 14, 20);
+    doc.text("BONNE SANTÉ - REPORTE DE INVENTARIO", 14, 20);
     
     doc.setFontSize(10);
     doc.setTextColor(100);
-    doc.text(`Fecha de EmisiÃ³n: ${new Date().toLocaleString()}`, 14, 28);
+    doc.text(`Fecha de Emisión: ${new Date().toLocaleString()}`, 14, 28);
     
-    const tableColumn = ["Producto", "DepÃ³sito", "S. Inicial", "Saldo (Actual)", "Consumo"];
+    const tableColumn = ["Producto", "Depósito", "S. Inicial", "Saldo (Actual)", "Consumo"];
     const tableRows = inventory.map(item => [
       item.nombre, 
       item.area || 'GRAL', 
@@ -90,11 +90,11 @@ const Backups = ({ inventory, consumptions, entries }) => {
     <div className="glass-card" style={{ padding: '2.5rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '3rem' }}>
         <div>
-          <h2 style={{ fontSize: '1.8rem' }}>GestiÃ³n de Datos y Reportes</h2>
-          <p className="text-muted">Directorio de ExportaciÃ³n: <code style={{ color: 'var(--primary)', fontWeight: 600 }}>Downloads / Plataforma de Stock</code></p>
+          <h2 style={{ fontSize: '1.8rem' }}>Gestión de Datos y Reportes</h2>
+          <p className="text-muted">Directorio de Exportación: <code style={{ color: 'var(--primary)', fontWeight: 600 }}>Downloads / Plataforma de Stock</code></p>
         </div>
         <div className="glass-card" style={{ padding: '1rem', background: 'rgba(20, 184, 166, 0.1)', border: '1px solid var(--primary-light)' }}>
-          <p style={{ fontSize: '0.8rem', color: 'var(--primary-dark)', fontWeight: 600 }}>ÃšLTIMO BACKUP</p>
+          <p style={{ fontSize: '0.8rem', color: 'var(--primary-dark)', fontWeight: 600 }}>ÚLTIMO BACKUP</p>
           <p style={{ margin: 0, fontWeight: 700 }}>{lastBackup}</p>
         </div>
       </div>
@@ -122,28 +122,28 @@ const Backups = ({ inventory, consumptions, entries }) => {
             </p>
             <div style={{ display: 'flex', gap: '1rem' }}>
               <button className="btn btn-secondary" onClick={exportExcel} style={{ flex: 1 }}>EXCEL PROFESIONAL</button>
-              <button className="btn btn-secondary" onClick={exportPDF} style={{ flex: 1 }}>PDF AUDITORÃA</button>
+              <button className="btn btn-secondary" onClick={exportPDF} style={{ flex: 1 }}>PDF AUDITORÍA</button>
             </div>
           </div>
         </div>
 
         <div className="glass-card" style={{ padding: '2rem', background: 'linear-gradient(135deg, rgba(234, 179, 8, 0.05) 0%, rgba(254, 243, 199, 0.1) 100%)', borderColor: 'var(--accent)' }}>
           <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--accent)' }}>
-            <ShieldCheck size={24} /> Instrucciones de AuditorÃ­a
+            <ShieldCheck size={24} /> Instrucciones de Auditoría
           </h3>
           <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             <div style={{ background: 'white', padding: '1.25rem', borderRadius: '12px', boxShadow: 'var(--shadow-sm)' }}>
-              <p style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}><b>CÃ¡lculo de Consumo:</b></p>
+              <p style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}><b>Cálculo de Consumo:</b></p>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                Los reportes calculan automÃ¡ticamente: <br/> 
+                Los reportes calculan automáticamente: <br/> 
                 <code>Consumo = Stock Inicial - Saldo Actual</code>
               </p>
             </div>
             
             <div style={{ background: 'white', padding: '1.25rem', borderRadius: '12px', boxShadow: 'var(--shadow-sm)' }}>
-              <p style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}><b>VerificaciÃ³n FÃ­sica:</b></p>
+              <p style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}><b>Verificación Física:</b></p>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                Utilice el PDF de AuditorÃ­a para realizar el conteo ciego mensual.
+                Utilice el PDF de Auditoría para realizar el conteo ciego mensual.
               </p>
             </div>
           </div>
@@ -154,4 +154,3 @@ const Backups = ({ inventory, consumptions, entries }) => {
 };
 
 export default Backups;
-

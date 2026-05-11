@@ -20,7 +20,7 @@ const InventoryTable = ({ inventory, userRole, onDelete }) => {
     const months = (expiry.getFullYear() - today.getFullYear()) * 12 + (expiry.getMonth() - today.getMonth());
     
     if (months <= 0) return { label: 'VENCIDO', color: 'var(--danger)', class: 'badge-danger' };
-    if (months <= 3) return { label: 'CrÃ­tico (<3m)', color: 'white', background: 'var(--danger)', class: 'badge-danger' };
+    if (months <= 3) return { label: 'Crítico (<3m)', color: 'white', background: 'var(--danger)', class: 'badge-danger' };
     if (months <= 6) return { label: 'Alerta (<6m)', color: 'black', background: 'var(--accent)', class: 'badge-warning' };
     return { label: date, color: 'var(--primary)', class: 'badge-info' };
   };
@@ -32,11 +32,11 @@ const InventoryTable = ({ inventory, userRole, onDelete }) => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <div>
           <h2 style={{ margin: 0 }}>Inventario Maestro de Insumos</h2>
-          <p className="text-muted" style={{ fontSize: '0.9rem' }}>VisualizaciÃ³n de saldos y trazabilidad de caducidad</p>
+          <p className="text-muted" style={{ fontSize: '0.9rem' }}>Visualización de saldos y trazabilidad de caducidad</p>
         </div>
         {userRole === 'ADMIN' && (
           <div className="badge badge-success" style={{ padding: '0.5rem 1rem' }}>
-            PERMISO DE EDICIÃ“N ACTIVO
+            PERMISO DE EDICIÓN ACTIVO
           </div>
         )}
       </div>
@@ -70,8 +70,8 @@ const InventoryTable = ({ inventory, userRole, onDelete }) => {
         <table>
           <thead>
             <tr>
-              <th>Nombre del Ãtem</th>
-              <th>CategorÃ­a</th>
+              <th>Nombre del Ítem</th>
+              <th>Categoría</th>
               <th>Vencimiento</th>
               <th style={{ textAlign: 'center' }}>Stock Inicial</th>
               <th style={{ textAlign: 'center' }}>Saldo (Actual)</th>
@@ -89,7 +89,7 @@ const InventoryTable = ({ inventory, userRole, onDelete }) => {
                 <td style={{ fontWeight: 600 }}>
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     {item.nombre}
-                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 400 }}>{item.area || 'DEPÃ“SITO CENTRAL'}</span>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 400 }}>{item.area || 'DEPÓSITO CENTRAL'}</span>
                   </div>
                 </td>
                 <td style={{ fontSize: '0.85rem' }}>
@@ -111,10 +111,10 @@ const InventoryTable = ({ inventory, userRole, onDelete }) => {
                 <td>
                   {isStockLow || expStatus.label.includes('VENCIDO') || expStatus.label.includes('<3m') ? (
                     <span className="badge badge-danger" style={{ display: 'flex', alignItems: 'center', gap: '4px', width: 'fit-content' }}>
-                      <AlertTriangle size={12} /> CrÃ­tico
+                      <AlertTriangle size={12} /> Crítico
                     </span>
                   ) : item.current_stock < 50 || expStatus.label.includes('<6m') ? (
-                    <span className="badge badge-warning">AtenciÃ³n</span>
+                    <span className="badge badge-warning">Atención</span>
                   ) : (
                     <span className="badge badge-success">Seguro</span>
                   )}
@@ -129,7 +129,7 @@ const InventoryTable = ({ inventory, userRole, onDelete }) => {
                         onClick={() => onDelete(item.id)}
                         className="btn" 
                         style={{ padding: '0.4rem', color: 'var(--danger)' }} 
-                        title="Eliminar del CatÃ¡logo"
+                        title="Eliminar del Catálogo"
                       >
                         <Trash2 size={16} />
                       </button>
@@ -145,7 +145,7 @@ const InventoryTable = ({ inventory, userRole, onDelete }) => {
       
       {filteredItems.length === 0 && (
         <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-          No se encontraron Ã­tems con los filtros aplicados.
+          No se encontraron ítems con los filtros aplicados.
         </div>
       )}
     </div>
@@ -153,4 +153,3 @@ const InventoryTable = ({ inventory, userRole, onDelete }) => {
 };
 
 export default InventoryTable;
-

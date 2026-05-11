@@ -13,7 +13,7 @@ const Dashboard = ({ inventory, consumptions, entries }) => {
     const today = new Date();
     const expiry = new Date(date);
     const months = (expiry.getFullYear() - today.getFullYear()) * 12 + (expiry.getMonth() - today.getMonth());
-    if (months <= 3) return { background: 'rgba(220, 38, 38, 0.1)', color: '#dc2626', label: 'CrÃ­tico (<3m)' };
+    if (months <= 3) return { background: 'rgba(220, 38, 38, 0.1)', color: '#dc2626', label: 'Crítico (<3m)' };
     if (months <= 6) return { background: 'rgba(245, 158, 11, 0.1)', color: '#d97706', label: 'Alerta (<6m)' };
     return null;
   };
@@ -50,7 +50,7 @@ const Dashboard = ({ inventory, consumptions, entries }) => {
             <TrendingUp size={24} />
           </div>
           <div>
-            <p className="text-muted" style={{ fontSize: '0.85rem', fontWeight: 500 }}>PrÃ³ximos Vencimientos</p>
+            <p className="text-muted" style={{ fontSize: '0.85rem', fontWeight: 500 }}>Próximos Vencimientos</p>
             <h3 style={{ margin: 0, fontSize: '1.5rem' }}>{expiringItems.length}</h3>
           </div>
         </div>
@@ -68,7 +68,7 @@ const Dashboard = ({ inventory, consumptions, entries }) => {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
         <div className="glass-card" style={{ padding: '2rem' }}>
-          <h3 style={{ marginBottom: '1.5rem' }}>Control de Caducidad (SemÃ¡foro)</h3>
+          <h3 style={{ marginBottom: '1.5rem' }}>Control de Caducidad (Semáforo)</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             {expiringItems.length > 0 ? expiringItems.map(item => {
               const semaforo = getExpirationStyle(item.vencimiento);
@@ -85,20 +85,20 @@ const Dashboard = ({ inventory, consumptions, entries }) => {
                 <span className="badge" style={{ background: semaforo.color, color: 'white' }}>{semaforo.label}</span>
               </div>
               );
-            }) : <p className="text-muted" style={{ textAlign: 'center', padding: '2rem' }}>No hay Ã­tems prÃ³ximos a vencer.</p>}
+            }) : <p className="text-muted" style={{ textAlign: 'center', padding: '2rem' }}>No hay ítems próximos a vencer.</p>}
           </div>
         </div>
 
         <div className="glass-card" style={{ padding: '2rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-            <h3>Ãšltimos Movimientos de Lote</h3>
+            <h3>Últimos Movimientos de Lote</h3>
             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Muestra 5 registros</span>
           </div>
           <div className="table-container" style={{ boxShadow: 'none', border: '1px solid var(--border)', background: 'transparent' }}>
             <table>
               <thead>
                 <tr>
-                  <th>Ãtem</th>
+                  <th>Ítem</th>
                   <th>Paciente / Prov.</th>
                   <th>Cant.</th>
                 </tr>
@@ -121,4 +121,3 @@ const Dashboard = ({ inventory, consumptions, entries }) => {
 };
 
 export default Dashboard;
-

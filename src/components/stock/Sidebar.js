@@ -15,11 +15,11 @@ const Sidebar = ({ activeTab, setActiveTab, userRole }) => {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} />, roles: ['ADMIN', 'SUPERVISOR'] },
     { id: 'consume', label: 'Registrar Consumo', icon: <MinusCircle size={20} />, roles: ['ADMIN', 'SUPERVISOR', 'OPERADOR'] },
-    { id: 'entry', label: 'Ingreso MercaderÃ­a', icon: <PlusCircle size={20} />, roles: ['ADMIN', 'SUPERVISOR'] },
-    { id: 'new-item', label: 'Nuevo Ãtem', icon: <PlusCircle size={20} />, roles: ['ADMIN'] },
+    { id: 'entry', label: 'Ingreso Mercadería', icon: <PlusCircle size={20} />, roles: ['ADMIN', 'SUPERVISOR'] },
+    { id: 'new-item', label: 'Nuevo Ítem', icon: <PlusCircle size={20} />, roles: ['ADMIN'] },
     { id: 'inventory', label: 'Stock e Inventario', icon: <Package size={20} />, roles: ['ADMIN', 'SUPERVISOR'] },
     { id: 'history', label: 'Trazabilidad', icon: <History size={20} />, roles: ['ADMIN', 'SUPERVISOR'] },
-    { id: 'web-manager', label: 'GestiÃ³n Web', icon: <LayoutDashboard size={20} />, roles: ['ADMIN'] },
+    { id: 'web-manager', label: 'Gestión Web', icon: <LayoutDashboard size={20} />, roles: ['ADMIN'] },
     { id: 'backups', label: 'Backups y Reportes', icon: <Database size={20} />, roles: ['ADMIN'] },
   ];
 
@@ -50,4 +50,3 @@ const Sidebar = ({ activeTab, setActiveTab, userRole }) => {
 };
 
 export default Sidebar;
-
