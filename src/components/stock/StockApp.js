@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { LogOut } from 'lucide-react';
-import { supabase } from '../../lib/supabaseClient';
+import { supabase } from './supabaseStockClient';
 
 // Components
 import Sidebar from './Sidebar';

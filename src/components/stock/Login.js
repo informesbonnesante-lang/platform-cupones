@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { supabase } from '../../lib/supabaseClient';
+import { supabase } from './supabaseStockClient';
 import { Lock, Mail, ChevronRight, Activity } from 'lucide-react';
 
 const Login = ({ onLogin }) => {

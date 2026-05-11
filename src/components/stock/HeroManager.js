@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabaseClient';
+import { supabase } from './supabaseStockClient';
 import { Layout, Save, Image as ImageIcon, Type, RefreshCw } from 'lucide-react';
 
 const HeroManager = () => {
