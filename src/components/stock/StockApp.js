@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect } from 'react';
 import { LogOut } from 'lucide-react';
@@ -77,7 +77,7 @@ function App() {
     setLoading(true);
     try {
       const [inv, cons, ent] = await Promise.all([
-        supabase.from('inventory_items').select('*').order('nombre'),
+        supabase.from('item_catalogo').select('*, nombre:nombre_item').order('nombre_item'),
         supabase.from('consumptions').select('*').order('timestamp', { ascending: false }),
         supabase.from('entries').select('*').order('timestamp', { ascending: false })
       ]);
@@ -125,7 +125,7 @@ function App() {
       for (const item of items) {
         const currentItem = inventory.find(i => i.id === item.itemId);
         await supabase
-          .from('inventory_items')
+          .from('item_catalogo')
           .update({ current_stock: currentItem.current_stock - parseInt(item.cantidad) })
           .eq('id', item.itemId);
       }
@@ -158,10 +158,9 @@ function App() {
       for (const item of items) {
         const currentItem = inventory.find(i => i.id === item.itemId);
         await supabase
-          .from('inventory_items')
+          .from('item_catalogo')
           .update({ 
-            current_stock: currentItem.current_stock + parseInt(item.cantidadIngresada),
-            vencimiento: item.vencimiento 
+            current_stock: currentItem.current_stock + parseInt(item.cantidadIngresada)
           })
           .eq('id', item.itemId);
       }
@@ -171,8 +170,10 @@ function App() {
   };
 
   const handleAddItem = async (newItem) => {
-    const { error } = await supabase.from('inventory_items').insert([{
-      ...newItem,
+    const { nombre, area, vencimiento, ...rest } = newItem;
+    const { error } = await supabase.from('item_catalogo').insert([{
+      nombre_item: nombre,
+      ...rest,
       usuario_registro: session.user.id
     }]);
 
@@ -184,7 +185,7 @@ function App() {
 
   const handleDeleteItem = async (itemId) => {
     if (userRole !== 'ADMIN') return;
-    const { error } = await supabase.from('inventory_items').delete().eq('id', itemId);
+    const { error } = await supabase.from('item_catalogo').delete().eq('id', itemId);
     if (!error) fetchData();
   };
 
