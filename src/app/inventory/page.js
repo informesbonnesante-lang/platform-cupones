@@ -1,5 +1,7 @@
-import Navigation from '@/components/Navigation';
-import StockApp from '@/components/stock/StockApp';
+import Navigation from '../../components/Navigation';
+import dynamic from 'next/dynamic';
+
+const StockApp = dynamic(() => import('../../components/stock/StockApp'), { ssr: false });
 
 export const metadata = {
   title: 'Control de Inventario - MedCupon',
