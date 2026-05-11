@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState } from 'react';
 import { PackagePlus, Tag, Boxes, Save, MapPin, Hash } from 'lucide-react';
@@ -63,9 +63,10 @@ Stock Actual: ${item.current_stock}
       categoria: formData.categoria,
       unidad: formData.unidad,
       area: formData.area,
+      stock_minimo: parseInt(formData.stock_minimo) || 5,
       stock_inicial: initialStock,
-      current_stock: initialStock, // Carga masiva / inicial logic
-      vencimiento: 'N/A'
+      current_stock: initialStock,
+      vencimiento: formData.vencimiento || 'N/A'
     };
 
     onAddItem(newItem);
@@ -77,7 +78,9 @@ Stock Actual: ${item.current_stock}
       categoria: 'INSUMOS',
       unidad: 'UNIDAD',
       area: 'FARMACIA',
-      stock_inicial: 0
+      stock_inicial: 0,
+      stock_minimo: 5,
+      vencimiento: ''
     });
 
     alert('Ítem añadido al catálogo y log generado con Stock Inicial.');
@@ -182,6 +185,21 @@ Stock Actual: ${item.current_stock}
                 <option key={a} value={a}>{a}</option>
               ))}
             </select>
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem' }}>
+          <div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-main)' }}>
+              Vencimiento (Opcional)
+            </label>
+            <input 
+              type="date" 
+              name="vencimiento"
+              className="input-field"
+              value={formData.vencimiento}
+              onChange={handleChange}
+            />
           </div>
         </div>
 

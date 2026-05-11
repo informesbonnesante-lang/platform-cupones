@@ -77,7 +77,7 @@ function App() {
     setLoading(true);
     try {
       const [inv, cons, ent] = await Promise.all([
-        supabase.from('item_catalogo').select('*, nombre:nombre_item').order('nombre_item'),
+        supabase.from('inventory_items').select('*').order('nombre'),
         supabase.from('consumptions').select('*').order('timestamp', { ascending: false }),
         supabase.from('entries').select('*').order('timestamp', { ascending: false })
       ]);
@@ -125,7 +125,7 @@ function App() {
       for (const item of items) {
         const currentItem = inventory.find(i => i.id === item.itemId);
         await supabase
-          .from('item_catalogo')
+          .from('inventory_items')
           .update({ current_stock: currentItem.current_stock - parseInt(item.cantidad) })
           .eq('id', item.itemId);
       }
@@ -158,9 +158,10 @@ function App() {
       for (const item of items) {
         const currentItem = inventory.find(i => i.id === item.itemId);
         await supabase
-          .from('item_catalogo')
+          .from('inventory_items')
           .update({ 
-            current_stock: currentItem.current_stock + parseInt(item.cantidadIngresada)
+            current_stock: currentItem.current_stock + parseInt(item.cantidadIngresada),
+            vencimiento: item.vencimiento
           })
           .eq('id', item.itemId);
       }
@@ -170,10 +171,8 @@ function App() {
   };
 
   const handleAddItem = async (newItem) => {
-    const { nombre, area, vencimiento, ...rest } = newItem;
-    const { error } = await supabase.from('item_catalogo').insert([{
-      nombre_item: nombre,
-      ...rest,
+    const { error } = await supabase.from('inventory_items').insert([{
+      ...newItem,
       usuario_registro: session.user.id
     }]);
 
@@ -185,7 +184,7 @@ function App() {
 
   const handleDeleteItem = async (itemId) => {
     if (userRole !== 'ADMIN') return;
-    const { error } = await supabase.from('item_catalogo').delete().eq('id', itemId);
+    const { error } = await supabase.from('inventory_items').delete().eq('id', itemId);
     if (!error) fetchData();
   };
 

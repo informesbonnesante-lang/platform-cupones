@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState } from 'react';
 import { Plus, Trash2, User, CreditCard, Building2 } from 'lucide-react';
@@ -126,7 +126,7 @@ const ConsumptionForm = ({ inventory, onSubmit }) => {
                       <option value="">Seleccione un producto...</option>
                       {inventory.map(inv => (
                         <option key={inv.id} value={inv.id}>
-                          {inv.nombre} (Stock: {inv.stock} {inv.unidad})
+                          {inv.nombre} (Stock: {inv.current_stock} {inv.unidad})
                         </option>
                       ))}
                     </select>

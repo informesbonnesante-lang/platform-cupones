@@ -11,9 +11,9 @@ const Backups = ({ inventory, consumptions, entries }) => {
 
   const exportSQL = () => {
     let sql = `-- Backup Plataforma de Stock - ${new Date().toLocaleString()}\n`;
-    sql += `DELETE FROM item_catalogo;\n`;
+    sql += `DELETE FROM inventory_items;\n`;
     inventory.forEach(item => {
-      sql += `INSERT INTO item_catalogo (nombre_item, categoria, stock_inicial, current_stock, unidad) VALUES ('${item.nombre}', '${item.categoria}', ${item.stock_inicial}, ${item.current_stock}, '${item.unidad}');\n`;
+      sql += `INSERT INTO inventory_items (nombre, categoria, stock_inicial, current_stock, unidad, area) VALUES ('${item.nombre}', '${item.categoria}', ${item.stock_inicial}, ${item.current_stock}, '${item.unidad}', '${item.area}');\n`;
     });
     
     sql += `\nDELETE FROM consumptions;\n`;

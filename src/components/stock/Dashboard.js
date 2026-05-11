@@ -1,11 +1,11 @@
-﻿"use client";
+"use client";
 
 import React from 'react';
 import { Package, AlertTriangle, TrendingUp, Users } from 'lucide-react';
 
 const Dashboard = ({ inventory, consumptions, entries }) => {
-  const lowStockItems = inventory.filter(item => item.stock < 20);
-  const totalItems = inventory.reduce((acc, current) => acc + current.stock, 0);
+  const lowStockItems = inventory.filter(item => item.current_stock < 20);
+  const totalItems = inventory.reduce((acc, current) => acc + current.current_stock, 0);
   const recentConsumptions = consumptions.slice(0, 5);
 
   const getExpirationStyle = (date) => {
@@ -61,7 +61,7 @@ const Dashboard = ({ inventory, consumptions, entries }) => {
           </div>
           <div>
             <p className="text-muted" style={{ fontSize: '0.85rem', fontWeight: 500 }}>Pacientes Atendidos</p>
-            <h3 style={{ margin: 0, fontSize: '1.5rem' }}>{new Set(consumptions.map(c => c.pacienteCi)).size}</h3>
+            <h3 style={{ margin: 0, fontSize: '1.5rem' }}>{new Set(consumptions.map(c => c.paciente_ci)).size}</h3>
           </div>
         </div>
       </div>
@@ -106,8 +106,8 @@ const Dashboard = ({ inventory, consumptions, entries }) => {
               <tbody>
                 {recentConsumptions.length > 0 ? recentConsumptions.map(c => (
                   <tr key={c.id}>
-                    <td style={{ fontWeight: 600 }}>{c.itemName}</td>
-                    <td>{c.pacienteNombre}</td>
+                    <td style={{ fontWeight: 600 }}>{c.item_name}</td>
+                    <td>{c.paciente_nombre}</td>
                     <td style={{ fontWeight: 700 }}>{c.cantidad}</td>
                   </tr>
                 )) : <tr><td colSpan="3" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>Sin movimientos recientes</td></tr>}
