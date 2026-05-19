@@ -279,7 +279,7 @@ function App() {
         if (userRole !== 'ADMIN') return <Dashboard inventory={inventory} />;
         return <HeroManager />;
       case 'history':
-        return <HistoryTable consumptions={consumptions} entries={entries} />;
+        return <HistoryTable inventory={inventory} consumptions={consumptions} entries={entries} />;
       case 'backups':
         return <Backups 
           inventory={inventory} 
