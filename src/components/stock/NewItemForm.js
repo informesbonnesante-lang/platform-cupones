@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from './supabaseStockClient';
-import { PackagePlus, Tag, Boxes, Save, MapPin, Hash } from 'lucide-react';
+import { PackagePlus, Tag, Boxes, Save, MapPin, Hash, AlertTriangle } from 'lucide-react';
 
 const NewItemForm = ({ onAddItem }) => {
   const [formData, setFormData] = useState({
@@ -11,7 +11,8 @@ const NewItemForm = ({ onAddItem }) => {
     unidad: 'UNIDAD',
     area: '',
     stock_inicial: 0,
-    cant_por_caja: 1
+    cant_por_caja: 1,
+    stock_minimo: 5
   });
 
   const categories = ['MEDICAMENTOS', 'ESTÉTICA', 'INSUMOS', 'DESCARTABLES', 'ACTIVOS'];
@@ -23,7 +24,7 @@ const NewItemForm = ({ onAddItem }) => {
     const fetchDepositos = async () => {
       try {
         const { data, error } = await supabase.from('depositos').select('nombre').order('nombre');
-        if (data && !error) {
+        if (data && !error && data.length > 0) {
           const fetchedAreas = data.map(d => d.nombre);
           setAreas(fetchedAreas);
           
@@ -32,9 +33,17 @@ const NewItemForm = ({ onAddItem }) => {
           if (central) {
             setFormData(prev => ({ ...prev, area: central }));
           }
+        } else {
+          // Fallback en caso de que la tabla esté vacía o haya error
+          const fallbackAreas = ['DEPÓSITO CENTRAL', 'ESTÉTICA', 'FARMACIA'];
+          setAreas(fallbackAreas);
+          setFormData(prev => ({ ...prev, area: 'DEPÓSITO CENTRAL' }));
         }
       } catch (err) {
         console.error('Error fetching depositos:', err);
+        const fallbackAreas = ['DEPÓSITO CENTRAL', 'ESTÉTICA', 'FARMACIA'];
+        setAreas(fallbackAreas);
+        setFormData(prev => ({ ...prev, area: 'DEPÓSITO CENTRAL' }));
       } finally {
         setLoadingAreas(false);
       }
@@ -193,7 +202,7 @@ Stock Actual: ${item.current_stock}
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1.5rem' }}>
           <div>
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-main)' }}>
               <Hash size={16} color="var(--primary)" /> Stock Inicial ({formData.unidad === 'CAJA' ? 'En Cajas' : 'En Unidades'})
@@ -203,6 +212,20 @@ Stock Actual: ${item.current_stock}
               name="stock_inicial"
               className="input-field"
               value={formData.stock_inicial}
+              onChange={handleChange}
+              min="0"
+              required
+            />
+          </div>
+          <div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-main)' }}>
+              <AlertTriangle size={16} color="var(--warning, #f59e0b)" /> Stock Mínimo
+            </label>
+            <input 
+              type="number" 
+              name="stock_minimo"
+              className="input-field"
+              value={formData.stock_minimo}
               onChange={handleChange}
               min="0"
               required
