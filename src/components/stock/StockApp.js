@@ -141,9 +141,12 @@ function App() {
 
     const newEntries = items.map(itemRow => {
       const inventoryItem = inventory.find(i => i.id === itemRow.itemId);
+      const cantPorCaja = inventoryItem?.unidad === 'CAJA' ? (inventoryItem.cant_por_caja || 1) : 1;
+      const totalUnidadesIngresadas = parseInt(itemRow.cantidadIngresada) * cantPorCaja;
+      
       return {
         item_id: itemRow.itemId,
-        cantidad_ingresada: parseInt(itemRow.cantidadIngresada),
+        cantidad_ingresada: totalUnidadesIngresadas,
         proveedor: header.proveedor.toUpperCase(),
         nro_factura: header.nroFactura.toUpperCase(),
         fecha_vencimiento: itemRow.vencimiento,
@@ -181,12 +184,20 @@ function App() {
 
     for (const item of items) {
       const sourceItem = inventory.find(i => i.id === item.itemId);
-      const qty = parseInt(item.cantidad);
+      const isCajaTransfer = sourceItem.unidad === 'CAJA' && item.tipoCantidad === 'CAJAS';
+      const cantPorCaja = sourceItem.unidad === 'CAJA' ? (sourceItem.cant_por_caja || 1) : 1;
+      const totalUnits = isCajaTransfer ? parseInt(item.cantidad) * cantPorCaja : parseInt(item.cantidad);
 
-      // Subtract from source
+      // Verify stock again just in case
+      if (sourceItem.current_stock < totalUnits) {
+        alert(`Error: Stock insuficiente para transferir ${totalUnits} unidades de ${sourceItem.nombre}.`);
+        return;
+      }
+
+      // Deduct from source
       await supabase
         .from('inventory_items')
-        .update({ current_stock: sourceItem.current_stock - qty })
+        .update({ current_stock: sourceItem.current_stock - totalUnits })
         .eq('id', sourceItem.id);
 
       // Look for destination item
@@ -201,7 +212,7 @@ function App() {
         // Update existing destination item
         await supabase
           .from('inventory_items')
-          .update({ current_stock: destItem.current_stock + qty })
+          .update({ current_stock: destItem.current_stock + totalUnits })
           .eq('id', destItem.id);
       } else {
         // Insert new item in destination area
@@ -209,9 +220,10 @@ function App() {
           nombre: sourceItem.nombre,
           categoria: sourceItem.categoria,
           unidad: sourceItem.unidad,
+          cant_por_caja: sourceItem.cant_por_caja || 1,
           area: item.toArea,
           stock_inicial: 0,
-          current_stock: qty,
+          current_stock: totalUnits,
           vencimiento: sourceItem.vencimiento,
           usuario_registro: userId
         };
@@ -223,7 +235,7 @@ function App() {
         item_name: sourceItem.nombre,
         from_area: sourceItem.area || 'SD',
         to_area: item.toArea,
-        cantidad: qty,
+        cantidad: totalUnits, // Log exactly the unit quantity
         responsable: responsable.toUpperCase(),
         usuario_registro: userId,
         timestamp: new Date().toISOString()

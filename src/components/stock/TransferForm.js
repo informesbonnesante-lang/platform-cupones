@@ -9,13 +9,13 @@ const TransferForm = ({ inventory, onSubmit }) => {
   });
 
   const [items, setItems] = useState([
-    { itemId: '', toArea: '', cantidad: 1 }
+    { itemId: '', toArea: '', cantidad: 1, tipoCantidad: 'UNIDADES' }
   ]);
 
   const areas = ['FARMACIA', 'ESTÉTICA', 'ENFERMERÍA', 'RECEPCIÓN', 'LABORATORIO', 'DEPÓSITO CENTRAL'];
 
   const addRow = () => {
-    setItems([...items, { itemId: '', toArea: '', cantidad: 1 }]);
+    setItems([...items, { itemId: '', toArea: '', cantidad: 1, tipoCantidad: 'UNIDADES' }]);
   };
 
   const removeRow = (index) => {
@@ -61,7 +61,7 @@ const TransferForm = ({ inventory, onSubmit }) => {
     onSubmit({ ...header, items });
     
     // Reset
-    setItems([{ itemId: '', toArea: '', cantidad: 1 }]);
+    setItems([{ itemId: '', toArea: '', cantidad: 1, tipoCantidad: 'UNIDADES' }]);
     setHeader({ responsable: '' });
   };
 
@@ -141,11 +141,29 @@ const TransferForm = ({ inventory, onSubmit }) => {
                     </select>
                   </td>
                   <td>
-                    <input 
-                      type="number" className="input-field" min="1"
-                      value={item.cantidad} onChange={(e) => updateItem(index, 'cantidad', e.target.value)}
-                      required
-                    />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <input 
+                        type="number" className="input-field" min="1"
+                        style={{ width: '80px' }}
+                        value={item.cantidad} onChange={(e) => updateItem(index, 'cantidad', e.target.value)}
+                        required
+                      />
+                      {selectedItem?.unidad === 'CAJA' ? (
+                        <select 
+                          className="input-field" 
+                          style={{ width: '110px', padding: '0.75rem 0.5rem' }}
+                          value={item.tipoCantidad || 'UNIDADES'} 
+                          onChange={(e) => updateItem(index, 'tipoCantidad', e.target.value)}
+                        >
+                          <option value="UNIDADES">Unds</option>
+                          <option value="CAJAS">Cajas</option>
+                        </select>
+                      ) : (
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                          Unds
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td style={{ textAlign: 'center' }}>
                     <button 
