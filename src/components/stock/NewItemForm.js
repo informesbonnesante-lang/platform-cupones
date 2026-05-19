@@ -8,7 +8,7 @@ const NewItemForm = ({ onAddItem }) => {
     nombre: '',
     categoria: 'INSUMOS',
     unidad: 'UNIDAD',
-    area: 'FARMACIA',
+    area: '',
     stock_inicial: 0
   });
 
@@ -77,7 +77,7 @@ Stock Actual: ${item.current_stock}
       nombre: '',
       categoria: 'INSUMOS',
       unidad: 'UNIDAD',
-      area: 'FARMACIA',
+      area: '',
       stock_inicial: 0,
       stock_minimo: 5,
       vencimiento: ''
@@ -173,14 +173,16 @@ Stock Actual: ${item.current_stock}
           </div>
           <div>
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-main)' }}>
-              <MapPin size={16} color="var(--primary)" /> Área
+              <MapPin size={16} color="var(--primary)" /> Depósito
             </label>
             <select 
               name="area"
               className="input-field"
               value={formData.area}
               onChange={handleChange}
+              required
             >
+              <option value="" disabled>Seleccione Depósito</option>
               {areas.map(a => (
                 <option key={a} value={a}>{a}</option>
               ))}

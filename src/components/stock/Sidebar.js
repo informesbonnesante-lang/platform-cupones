@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React from 'react';
 import { 
@@ -8,7 +8,8 @@ import {
   Package, 
   History, 
   Settings,
-  Database
+  Database,
+  ArrowRightLeft
 } from 'lucide-react';
 
 const Sidebar = ({ activeTab, setActiveTab, userRole }) => {
@@ -16,6 +17,7 @@ const Sidebar = ({ activeTab, setActiveTab, userRole }) => {
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} />, roles: ['ADMIN', 'SUPERVISOR'] },
     { id: 'consume', label: 'Registrar Consumo', icon: <MinusCircle size={20} />, roles: ['ADMIN', 'SUPERVISOR', 'OPERADOR'] },
     { id: 'entry', label: 'Ingreso Mercadería', icon: <PlusCircle size={20} />, roles: ['ADMIN', 'SUPERVISOR'] },
+    { id: 'transfer', label: 'Transferencia', icon: <ArrowRightLeft size={20} />, roles: ['ADMIN', 'SUPERVISOR'] },
     { id: 'new-item', label: 'Nuevo Ítem', icon: <PlusCircle size={20} />, roles: ['ADMIN'] },
     { id: 'inventory', label: 'Stock e Inventario', icon: <Package size={20} />, roles: ['ADMIN', 'SUPERVISOR'] },
     { id: 'history', label: 'Trazabilidad', icon: <History size={20} />, roles: ['ADMIN', 'SUPERVISOR'] },

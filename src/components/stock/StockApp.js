@@ -15,6 +15,7 @@ import Backups from './Backups';
 import NewItemForm from './NewItemForm';
 import HeroManager from './HeroManager';
 import Login from './Login';
+import TransferForm from './TransferForm';
 
 function App() {
   const [session, setSession] = useState(null);
@@ -170,6 +171,70 @@ function App() {
     }
   };
 
+  const handleTransfer = async (data) => {
+    const { items, responsable } = data;
+    const userId = session.user.id;
+
+    let transferenciasToInsert = [];
+
+    for (const item of items) {
+      const sourceItem = inventory.find(i => i.id === item.itemId);
+      const qty = parseInt(item.cantidad);
+
+      // Subtract from source
+      await supabase
+        .from('inventory_items')
+        .update({ current_stock: sourceItem.current_stock - qty })
+        .eq('id', sourceItem.id);
+
+      // Look for destination item
+      const destItem = inventory.find(i => 
+        i.nombre === sourceItem.nombre && 
+        i.categoria === sourceItem.categoria && 
+        i.unidad === sourceItem.unidad && 
+        i.area === item.toArea
+      );
+
+      if (destItem) {
+        // Update existing destination item
+        await supabase
+          .from('inventory_items')
+          .update({ current_stock: destItem.current_stock + qty })
+          .eq('id', destItem.id);
+      } else {
+        // Insert new item in destination area
+        const newItem = {
+          nombre: sourceItem.nombre,
+          categoria: sourceItem.categoria,
+          unidad: sourceItem.unidad,
+          area: item.toArea,
+          stock_inicial: 0,
+          current_stock: qty,
+          vencimiento: sourceItem.vencimiento,
+          usuario_registro: userId
+        };
+        await supabase.from('inventory_items').insert([newItem]);
+      }
+
+      // Log transferencias
+      transferenciasToInsert.push({
+        item_name: sourceItem.nombre,
+        from_area: sourceItem.area || 'SD',
+        to_area: item.toArea,
+        cantidad: qty,
+        responsable: responsable.toUpperCase(),
+        usuario_registro: userId,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Attempt to insert transfer logs
+    await supabase.from('transferencias').insert(transferenciasToInsert);
+
+    fetchData();
+    setActiveTab('inventory');
+  };
+
   const handleAddItem = async (newItem) => {
     const { error } = await supabase.from('inventory_items').insert([{
       ...newItem,
@@ -205,6 +270,8 @@ function App() {
       case 'entry':
         if (userRole === 'OPERADOR') return <Dashboard inventory={inventory} />;
         return <EntryForm inventory={inventory} onSubmit={handleEntry} />;
+      case 'transfer':
+        return <TransferForm inventory={inventory} onSubmit={handleTransfer} />;
       case 'new-item':
         if (userRole !== 'ADMIN') return <Dashboard inventory={inventory} />;
         return <NewItemForm onAddItem={handleAddItem} />;

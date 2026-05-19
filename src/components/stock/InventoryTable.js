@@ -54,7 +54,9 @@ const InventoryTable = ({ inventory, userRole, onDelete }) => {
           />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <Filter size={18} className="text-muted" />
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600, color: 'var(--text-main)' }}>
+            <Filter size={18} className="text-muted" /> Filtrar por Depósito:
+          </label>
           <select 
             className="input-field" 
             style={{ width: '220px' }}
