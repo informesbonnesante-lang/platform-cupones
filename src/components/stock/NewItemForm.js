@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { supabase } from './supabaseStockClient';
 import { PackagePlus, Tag, Boxes, Save, MapPin, Hash } from 'lucide-react';
 
 const NewItemForm = ({ onAddItem }) => {
@@ -14,7 +15,31 @@ const NewItemForm = ({ onAddItem }) => {
 
   const categories = ['MEDICAMENTOS', 'ESTÉTICA', 'INSUMOS', 'DESCARTABLES', 'ACTIVOS'];
   const units = ['UNIDAD', 'CAJA', 'FRASCO', 'AMPOLLA', 'ML', 'G', 'BLISTER', 'PAQUETE'];
-  const areas = ['FARMACIA', 'ESTÉTICA', 'ENFERMERÍA', 'RECEPCIÓN', 'LABORATORIO'];
+  const [areas, setAreas] = useState([]);
+  const [loadingAreas, setLoadingAreas] = useState(true);
+
+  useEffect(() => {
+    const fetchDepositos = async () => {
+      try {
+        const { data, error } = await supabase.from('depositos').select('nombre').order('nombre');
+        if (data && !error) {
+          const fetchedAreas = data.map(d => d.nombre);
+          setAreas(fetchedAreas);
+          
+          // Establecer "Depósito Central" como valor por defecto
+          const central = fetchedAreas.find(a => a.includes('Central') || a.includes('CENTRAL') || a.includes('central'));
+          if (central) {
+            setFormData(prev => ({ ...prev, area: central }));
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching depositos:', err);
+      } finally {
+        setLoadingAreas(false);
+      }
+    };
+    fetchDepositos();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -181,8 +206,9 @@ Stock Actual: ${item.current_stock}
               value={formData.area}
               onChange={handleChange}
               required
+              disabled={loadingAreas}
             >
-              <option value="" disabled>Seleccione Depósito</option>
+              <option value="" disabled>{loadingAreas ? 'Cargando...' : 'Seleccione Depósito'}</option>
               {areas.map(a => (
                 <option key={a} value={a}>{a}</option>
               ))}
