@@ -75,10 +75,11 @@ const HistoryTable = ({ inventory = [], consumptions = [], entries = [] }) => {
 
   // Filtrado de la tabla unificada
   const filteredData = combinedData.filter(d => {
-    const term = searchTerm.toLowerCase();
-    const matchesSearch = d.itemName.toLowerCase().includes(term) ||
-                          d.responsable.toLowerCase().includes(term) ||
-                          d.detalles.toLowerCase().includes(term);
+    const term = (searchTerm || '').toLowerCase().trim();
+    const matchesSearch = !term || 
+                          (d.itemName && d.itemName.toLowerCase().includes(term)) ||
+                          (d.responsable && d.responsable.toLowerCase().includes(term)) ||
+                          (d.detalles && d.detalles.toLowerCase().includes(term));
     
     const matchesType = filterType === 'TODOS' || d.type === filterType;
     const matchesDeposito = filterDeposito === 'TODOS' || d.deposito === filterDeposito;
