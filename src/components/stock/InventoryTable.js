@@ -27,6 +27,10 @@ const InventoryTable = ({ inventory, userRole, onDelete }) => {
 
   const areas = ['Todas', ...new Set(inventory.map(item => item.area || 'GENERAL'))];
 
+  // Debugging log para ver qué ítems se están filtrando y mostrando
+  console.log("현재 화면에 뿌려지는 재고 리스트 (Filtered):", filteredItems);
+  console.log("전체 재고 리스트 (Raw from DB):", inventory);
+
   return (
     <div className="glass-card" style={{ padding: '2rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>

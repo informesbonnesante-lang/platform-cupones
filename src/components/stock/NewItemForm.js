@@ -74,12 +74,16 @@ Stock Actual: ${item.current_stock}
     URL.revokeObjectURL(url);
   };
 
-  const handleSubmit = (e) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.nombre.trim()) {
       alert('Por favor, ingrese el nombre del ítem.');
       return;
     }
+
+    setIsSubmitting(true);
 
     const initialStock = parseInt(formData.stock_inicial) || 0;
 
@@ -94,21 +98,25 @@ Stock Actual: ${item.current_stock}
       vencimiento: formData.vencimiento || 'N/A'
     };
 
-    onAddItem(newItem);
-    generateLog({ ...newItem, id: Date.now().toString() });
+    const result = await onAddItem(newItem);
     
-    // Reset form
-    setFormData({
-      nombre: '',
-      categoria: 'INSUMOS',
-      unidad: 'UNIDAD',
-      area: '',
-      stock_inicial: 0,
-      stock_minimo: 5,
-      vencimiento: ''
-    });
+    if (result && result.success) {
+      generateLog({ ...newItem, id: Date.now().toString() });
+      
+      // Reset form
+      setFormData({
+        nombre: '',
+        categoria: 'INSUMOS',
+        unidad: 'UNIDAD',
+        area: '',
+        stock_inicial: 0,
+        stock_minimo: 5,
+        vencimiento: ''
+      });
 
-    alert('Ítem añadido al catálogo y log generado con Stock Inicial.');
+      alert('Ítem añadido al catálogo y log generado con Stock Inicial.');
+    }
+    setIsSubmitting(false);
   };
 
   return (
@@ -232,8 +240,8 @@ Stock Actual: ${item.current_stock}
         </div>
 
         <div style={{ marginTop: '1rem' }}>
-          <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '1rem', gap: '0.75rem' }}>
-            <Save size={20} /> Confirmar y Guardar Ítem
+          <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '1rem', gap: '0.75rem' }} disabled={isSubmitting}>
+            <Save size={20} /> {isSubmitting ? 'Guardando...' : 'Confirmar y Guardar Ítem'}
           </button>
           <p style={{ marginTop: '1rem', fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center' }}>
             * Al confirmar, se establecerá el stock inicial y se generará un registro de auditoría local.

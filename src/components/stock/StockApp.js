@@ -242,8 +242,13 @@ function App() {
     }]);
 
     if (!error) {
-      fetchData();
+      await fetchData();
       setActiveTab('inventory');
+      return { success: true };
+    } else {
+      console.error("Error insertando nuevo ítem:", error);
+      alert("Error al guardar en la base de datos: " + error.message);
+      return { success: false, error };
     }
   };
 
