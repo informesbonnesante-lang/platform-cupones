@@ -148,14 +148,13 @@ const HistoryTable = ({ inventory = [], consumptions = [], entries = [] }) => {
       {/* FILTROS */}
       <div className="glass-card" style={{ padding: '1.5rem' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem' }}>
-          <div style={{ position: 'relative' }}>
+          <div>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 600 }}>Buscar</label>
-            <div style={{ position: 'relative' }}>
-              <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+            <div style={{ display: 'flex', alignItems: 'center', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', padding: '0 0.75rem' }}>
+              <Search size={16} color="var(--text-muted)" />
               <input 
                 type="text" 
-                className="input-field" 
-                style={{ paddingLeft: '35px' }} 
+                style={{ border: 'none', background: 'transparent', width: '100%', padding: '0.75rem', outline: 'none', fontSize: '0.95rem' }} 
                 placeholder="Ítem, paciente, responsable..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
