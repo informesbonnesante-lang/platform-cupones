@@ -158,10 +158,12 @@ function App() {
     if (!entError) {
       for (const item of items) {
         const currentItem = inventory.find(i => i.id === item.itemId);
+        const cantPorCaja = currentItem.unidad === 'CAJA' ? (currentItem.cant_por_caja || 1) : 1;
+        const totalUnidadesIngresadas = parseInt(item.cantidadIngresada) * cantPorCaja;
         await supabase
           .from('inventory_items')
           .update({ 
-            current_stock: currentItem.current_stock + parseInt(item.cantidadIngresada),
+            current_stock: currentItem.current_stock + totalUnidadesIngresadas,
             vencimiento: item.vencimiento
           })
           .eq('id', item.itemId);

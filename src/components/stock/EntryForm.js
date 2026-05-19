@@ -99,10 +99,16 @@ const EntryForm = ({ inventory, onSubmit }) => {
                     </select>
                   </td>
                   <td>
-                    <input 
-                      type="number" className="input-field" min="1"
-                      value={item.cantidadIngresada} onChange={(e) => updateItem(index, 'cantidadIngresada', e.target.value)}
-                    />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <input 
+                        type="number" className="input-field" min="1"
+                        style={{ width: '80px' }}
+                        value={item.cantidadIngresada} onChange={(e) => updateItem(index, 'cantidadIngresada', e.target.value)}
+                      />
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                        {inventory.find(i => i.id === item.itemId)?.unidad === 'CAJA' ? 'Cajas' : 'Unds'}
+                      </span>
+                    </div>
                   </td>
                   <td>
                     <input 

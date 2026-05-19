@@ -111,8 +111,21 @@ const InventoryTable = ({ inventory, userRole, onDelete }) => {
                 <td style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
                     {item.stock_inicial}
                 </td>
-                <td style={{ fontWeight: 700, fontSize: '1.1rem', textAlign: 'center' }}>
-                  {item.current_stock} <small className="text-muted" style={{ fontWeight: 400, fontSize: '0.8rem' }}>{item.unidad}</small>
+                <td style={{ textAlign: 'center' }}>
+                  {item.unidad === 'CAJA' ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: '1.2' }}>
+                      <div style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--primary-dark)' }}>
+                        {Math.floor(item.current_stock / (item.cant_por_caja || 1))} Cajas <span style={{ fontWeight: 400 }}>y</span> {item.current_stock % (item.cant_por_caja || 1)} Unds
+                      </div>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                        (Total: {item.current_stock} Unds)
+                      </span>
+                    </div>
+                  ) : (
+                    <div>
+                      <span style={{ fontWeight: 700, fontSize: '1.1rem' }}>{item.current_stock}</span> <small className="text-muted" style={{ fontWeight: 400, fontSize: '0.8rem' }}>{item.unidad}</small>
+                    </div>
+                  )}
                 </td>
                 <td>
                   {isStockLow || expStatus.label.includes('VENCIDO') || expStatus.label.includes('<3m') ? (

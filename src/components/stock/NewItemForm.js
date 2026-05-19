@@ -10,7 +10,8 @@ const NewItemForm = ({ onAddItem }) => {
     categoria: 'INSUMOS',
     unidad: 'UNIDAD',
     area: '',
-    stock_inicial: 0
+    stock_inicial: 0,
+    cant_por_caja: 1
   });
 
   const categories = ['MEDICAMENTOS', 'ESTÉTICA', 'INSUMOS', 'DESCARTABLES', 'ACTIVOS'];
@@ -86,15 +87,17 @@ Stock Actual: ${item.current_stock}
     setIsSubmitting(true);
 
     const initialStock = parseInt(formData.stock_inicial) || 0;
+    const cantPorCaja = formData.unidad === 'CAJA' ? (parseInt(formData.cant_por_caja) || 1) : 1;
 
     const newItem = {
       nombre: formData.nombre.toUpperCase(),
       categoria: formData.categoria,
       unidad: formData.unidad,
+      cant_por_caja: cantPorCaja,
       area: formData.area,
       stock_minimo: parseInt(formData.stock_minimo) || 5,
-      stock_inicial: initialStock,
-      current_stock: initialStock,
+      stock_inicial: initialStock, // Guardaremos las cajas que digite como info
+      current_stock: initialStock * cantPorCaja, // El stock real es convertido a unidades
       vencimiento: formData.vencimiento || 'N/A'
     };
 
@@ -110,6 +113,7 @@ Stock Actual: ${item.current_stock}
         unidad: 'UNIDAD',
         area: '',
         stock_inicial: 0,
+        cant_por_caja: 1,
         stock_minimo: 5,
         vencimiento: ''
       });
@@ -192,7 +196,7 @@ Stock Actual: ${item.current_stock}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
           <div>
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-main)' }}>
-              <Hash size={16} color="var(--primary)" /> Stock Inicial (int4)
+              <Hash size={16} color="var(--primary)" /> Stock Inicial ({formData.unidad === 'CAJA' ? 'En Cajas' : 'En Unidades'})
             </label>
             <input 
               type="number" 
@@ -224,7 +228,7 @@ Stock Actual: ${item.current_stock}
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: formData.unidad === 'CAJA' ? '1fr 1fr' : '1fr', gap: '1.5rem' }}>
           <div>
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-main)' }}>
               Vencimiento (Opcional)
@@ -237,6 +241,26 @@ Stock Actual: ${item.current_stock}
               onChange={handleChange}
             />
           </div>
+          {formData.unidad === 'CAJA' && (
+            <div style={{ animation: 'fadeIn 0.3s' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-main)' }}>
+                <Boxes size={16} color="var(--primary)" /> Unidades por Caja
+              </label>
+              <input 
+                type="number" 
+                name="cant_por_caja"
+                className="input-field"
+                value={formData.cant_por_caja}
+                onChange={handleChange}
+                min="1"
+                required
+                placeholder="Ej: 50"
+              />
+              <small className="text-muted" style={{ display: 'block', marginTop: '0.25rem' }}>
+                Stock interno guardado: {formData.stock_inicial * (formData.cant_por_caja || 1)} unidades.
+              </small>
+            </div>
+          )}
         </div>
 
         <div style={{ marginTop: '1rem' }}>
