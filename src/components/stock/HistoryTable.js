@@ -7,12 +7,19 @@ import {
 } from 'lucide-react';
 
 const HistoryTable = ({ inventory = [], consumptions = [], entries = [], transferencias = [], depositos = [] }) => {
-  // Estados para filtros
+  // 1. Applied filter states (These drive the actual data filtering)
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('TODOS');
   const [filterDeposito, setFilterDeposito] = useState('TODOS');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
+  const [desdeFecha, setDesdeFecha] = useState('');
+  const [hastaFecha, setHastaFecha] = useState('');
+
+  // 2. Temporary input states (These are bound to the form controls)
+  const [searchVal, setSearchVal] = useState('');
+  const [typeVal, setTypeVal] = useState('TODOS');
+  const [depositoVal, setDepositoVal] = useState('TODOS');
+  const [dateFromVal, setDateFromVal] = useState('');
+  const [dateToVal, setDateToVal] = useState('');
 
   // Unificar y ordenar datos
   const combinedData = useMemo(() => {
@@ -92,14 +99,42 @@ const HistoryTable = ({ inventory = [], consumptions = [], entries = [], transfe
       
       // Normalize dates to YYYY-MM-DD for 100% robust string lexicographical comparison
       const itemDateStr = d.timestamp ? d.timestamp.split('T')[0] : '';
-      const matchesDateFrom = !dateFrom || itemDateStr >= dateFrom;
-      const matchesDateTo = !dateTo || itemDateStr <= dateTo;
+      
+      // 'Desde' 날짜가 입력되었을 때만 필터링
+      const matchesDateFrom = !desdeFecha || itemDateStr >= desdeFecha;
+      
+      // 'Hasta' 날짜가 입력되었을 때만 필터링
+      const matchesDateTo = !hastaFecha || itemDateStr <= hastaFecha;
 
       return matchesSearch && matchesType && matchesDeposito && matchesDateFrom && matchesDateTo;
     });
-  }, [combinedData, searchTerm, filterType, filterDeposito, dateFrom, dateTo]);
+  }, [combinedData, searchTerm, filterType, filterDeposito, desdeFecha, hastaFecha]);
 
-  // Cálculos para Dashboard KPIs de la tabla filtrada
+  // Aplicar filtros manuales con el botón
+  const handleApplyFilters = () => {
+    setSearchTerm(searchVal);
+    setFilterType(typeVal);
+    setFilterDeposito(depositoVal);
+    setDesdeFecha(dateFromVal);
+    setHastaFecha(dateToVal);
+  };
+
+  // Limpiar todos los filtros y restablecer valores por defecto
+  const handleClearFilters = () => {
+    setSearchVal('');
+    setTypeVal('TODOS');
+    setDepositoVal('TODOS');
+    setDateFromVal('');
+    setDateToVal('');
+
+    setSearchTerm('');
+    setFilterType('TODOS');
+    setFilterDeposito('TODOS');
+    setDesdeFecha('');
+    setHastaFecha('');
+  };
+
+  // KPIs calculations based on filtered data
   const ingresosMes = useMemo(() => {
     return filteredData.filter(m => m.type === 'Ingreso').reduce((acc, curr) => acc + curr.cantidad, 0);
   }, [filteredData]);
@@ -249,7 +284,7 @@ const HistoryTable = ({ inventory = [], consumptions = [], entries = [], transfe
 
       {/* FILTROS */}
       <div className="glass-card" style={{ padding: '1.5rem' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1.5rem' }}>
           <div>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 600 }}>Buscar</label>
             <div style={{ display: 'flex', alignItems: 'center', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', padding: '0 0.75rem' }}>
@@ -258,15 +293,15 @@ const HistoryTable = ({ inventory = [], consumptions = [], entries = [], transfe
                 type="text" 
                 style={{ border: 'none', background: 'transparent', width: '100%', padding: '0.75rem', outline: 'none', fontSize: '0.95rem' }} 
                 placeholder="Ítem, paciente, responsable..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                value={searchVal}
+                onChange={(e) => setSearchVal(e.target.value)}
               />
             </div>
           </div>
 
           <div>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 600 }}>Tipo de Movimiento</label>
-            <select className="input-field" value={filterType} onChange={(e) => setFilterType(e.target.value)}>
+            <select className="input-field" value={typeVal} onChange={(e) => setTypeVal(e.target.value)}>
               <option value="TODOS">Todos</option>
               <option value="Ingreso">Entradas (Ingresos)</option>
               <option value="Consumo">Salidas (Consumos)</option>
@@ -276,20 +311,68 @@ const HistoryTable = ({ inventory = [], consumptions = [], entries = [], transfe
 
           <div>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 600 }}>Depósito</label>
-            <select className="input-field" value={filterDeposito} onChange={(e) => setFilterDeposito(e.target.value)}>
+            <select className="input-field" value={depositoVal} onChange={(e) => setDepositoVal(e.target.value)}>
               {depositosList.map(dep => <option key={dep} value={dep}>{dep}</option>)}
             </select>
           </div>
 
           <div>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 600 }}>Desde Fecha</label>
-            <input type="date" className="input-field" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+            <input type="date" className="input-field" value={dateFromVal} onChange={(e) => setDateFromVal(e.target.value)} />
           </div>
 
           <div>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 600 }}>Hasta Fecha</label>
-            <input type="date" className="input-field" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+            <input type="date" className="input-field" value={dateToVal} onChange={(e) => setDateToVal(e.target.value)} />
           </div>
+        </div>
+
+        {/* BOTONES DE CONTROL DE BÚSQUEDA */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1.5rem', borderTop: '1px solid var(--border)', paddingTop: '1.2rem' }}>
+          <button 
+            onClick={handleClearFilters}
+            style={{ 
+              background: 'transparent', 
+              color: 'var(--text-muted)', 
+              padding: '0.6rem 1.2rem', 
+              borderRadius: '8px', 
+              border: '1px solid var(--border)', 
+              cursor: 'pointer', 
+              fontWeight: '600',
+              transition: 'all 0.2s'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.background = 'rgba(0,0,0,0.03)';
+              e.currentTarget.style.color = 'var(--text-main)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = 'transparent';
+              e.currentTarget.style.color = 'var(--text-muted)';
+            }}
+          >
+            Limpiar Filtros
+          </button>
+          <button 
+            onClick={handleApplyFilters}
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '0.5rem', 
+              background: 'var(--primary)', 
+              color: 'white', 
+              padding: '0.6rem 1.5rem', 
+              borderRadius: '8px', 
+              border: 'none', 
+              cursor: 'pointer', 
+              fontWeight: 'bold',
+              transition: 'background 0.2s',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.background = 'var(--primary-dark)'}
+            onMouseOut={(e) => e.currentTarget.style.background = 'var(--primary)'}
+          >
+            <Filter size={16} /> Buscar
+          </button>
         </div>
       </div>
 
