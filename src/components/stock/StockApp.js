@@ -25,6 +25,7 @@ function App() {
   const [consumptions, setConsumptions] = useState([]);
   const [entries, setEntries] = useState([]);
   const [depositos, setDepositos] = useState([]);
+  const [transferencias, setTransferencias] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Auth & Role Listener
@@ -78,16 +79,18 @@ function App() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [inv, cons, ent, dep] = await Promise.all([
+      const [inv, cons, ent, dep, trans] = await Promise.all([
         supabase.from('inventory_items').select('*').order('nombre'),
         supabase.from('consumptions').select('*').order('timestamp', { ascending: false }),
         supabase.from('entries').select('*').order('timestamp', { ascending: false }),
-        supabase.from('depositos').select('nombre').order('nombre')
+        supabase.from('depositos').select('nombre').order('nombre'),
+        supabase.from('transferencias').select('*').order('timestamp', { ascending: false })
       ]);
 
       if (inv.data) setInventory(inv.data);
       if (cons.data) setConsumptions(cons.data);
       if (ent.data) setEntries(ent.data);
+      if (trans.data) setTransferencias(trans.data);
       if (dep.data && dep.data.length > 0) {
         setDepositos(dep.data.map(d => d.nombre));
       } else {
@@ -306,7 +309,13 @@ function App() {
         if (userRole !== 'ADMIN') return <Dashboard inventory={inventory} />;
         return <HeroManager />;
       case 'history':
-        return <HistoryTable inventory={inventory} consumptions={consumptions} entries={entries} depositos={depositos} />;
+        return <HistoryTable 
+          inventory={inventory} 
+          consumptions={consumptions} 
+          entries={entries} 
+          transferencias={transferencias} 
+          depositos={depositos} 
+        />;
       case 'backups':
         return <Backups 
           inventory={inventory} 
