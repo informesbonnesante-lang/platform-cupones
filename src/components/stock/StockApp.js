@@ -24,6 +24,7 @@ function App() {
   const [inventory, setInventory] = useState([]);
   const [consumptions, setConsumptions] = useState([]);
   const [entries, setEntries] = useState([]);
+  const [depositos, setDepositos] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Auth & Role Listener
@@ -77,17 +78,24 @@ function App() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [inv, cons, ent] = await Promise.all([
+      const [inv, cons, ent, dep] = await Promise.all([
         supabase.from('inventory_items').select('*').order('nombre'),
         supabase.from('consumptions').select('*').order('timestamp', { ascending: false }),
-        supabase.from('entries').select('*').order('timestamp', { ascending: false })
+        supabase.from('entries').select('*').order('timestamp', { ascending: false }),
+        supabase.from('depositos').select('nombre').order('nombre')
       ]);
 
       if (inv.data) setInventory(inv.data);
       if (cons.data) setConsumptions(cons.data);
       if (ent.data) setEntries(ent.data);
+      if (dep.data && dep.data.length > 0) {
+        setDepositos(dep.data.map(d => d.nombre));
+      } else {
+        setDepositos(['DEPÓSITO CENTRAL', 'ESTÉTICA', 'FARMACIA']);
+      }
     } catch (err) {
       console.error('Error fetching data:', err);
+      setDepositos(['DEPÓSITO CENTRAL', 'ESTÉTICA', 'FARMACIA']);
     } finally {
       setLoading(false);
     }
@@ -285,20 +293,20 @@ function App() {
           onDelete={handleDeleteItem} 
         />;
       case 'consume':
-        return <ConsumptionForm inventory={inventory} onSubmit={handleConsumption} />;
+        return <ConsumptionForm inventory={inventory} onSubmit={handleConsumption} depositos={depositos} />;
       case 'entry':
         if (userRole === 'OPERADOR') return <Dashboard inventory={inventory} />;
-        return <EntryForm inventory={inventory} onSubmit={handleEntry} />;
+        return <EntryForm inventory={inventory} onSubmit={handleEntry} depositos={depositos} />;
       case 'transfer':
-        return <TransferForm inventory={inventory} onSubmit={handleTransfer} />;
+        return <TransferForm inventory={inventory} onSubmit={handleTransfer} depositos={depositos} />;
       case 'new-item':
         if (userRole !== 'ADMIN') return <Dashboard inventory={inventory} />;
-        return <NewItemForm onAddItem={handleAddItem} />;
+        return <NewItemForm onAddItem={handleAddItem} depositos={depositos} />;
       case 'web-manager':
         if (userRole !== 'ADMIN') return <Dashboard inventory={inventory} />;
         return <HeroManager />;
       case 'history':
-        return <HistoryTable inventory={inventory} consumptions={consumptions} entries={entries} />;
+        return <HistoryTable inventory={inventory} consumptions={consumptions} entries={entries} depositos={depositos} />;
       case 'backups':
         return <Backups 
           inventory={inventory} 

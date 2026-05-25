@@ -1,15 +1,23 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, User, CreditCard, Building2 } from 'lucide-react';
 
-const ConsumptionForm = ({ inventory, onSubmit }) => {
+const ConsumptionForm = ({ inventory, onSubmit, depositos = [] }) => {
   const [header, setHeader] = useState({
     pacienteNombre: '',
     pacienteCi: '',
-    departamento: 'ENFERMERÍA',
+    departamento: '',
     categoriaPago: 'INCLUIDO EN EL SERVICIO'
   });
+
+  // Dynamically set default departamento when depositos load
+  useEffect(() => {
+    if (depositos.length > 0 && !header.departamento) {
+      const central = depositos.find(d => d.toUpperCase().includes('CENTRAL'));
+      setHeader(prev => ({ ...prev, departamento: central || depositos[0] }));
+    }
+  }, [depositos, header.departamento]);
 
   const [items, setItems] = useState([
     { itemId: '', cantidad: 1 }
@@ -40,10 +48,11 @@ const ConsumptionForm = ({ inventory, onSubmit }) => {
     
     // Reset
     setItems([{ itemId: '', cantidad: 1 }]);
+    const central = depositos.find(d => d.toUpperCase().includes('CENTRAL'));
     setHeader({
       pacienteNombre: '',
       pacienteCi: '',
-      departamento: 'ENFERMERÍA',
+      departamento: central || depositos[0] || '',
       categoriaPago: 'INCLUIDO EN EL SERVICIO'
     });
   };
@@ -78,10 +87,13 @@ const ConsumptionForm = ({ inventory, onSubmit }) => {
               className="input-field" value={header.departamento} 
               onChange={(e) => setHeader({...header, departamento: e.target.value})}
             >
-              <option value="ENFERMERÍA">ENFERMERÍA</option>
-              <option value="ADMINISTRACIÓN">ADMINISTRACIÓN</option>
-              <option value="RECEPCIÓN">RECEPCIÓN</option>
-              <option value="MANTENIMIENTO">MANTENIMIENTO</option>
+              {depositos.length === 0 ? (
+                <option value="">Cargando depósitos...</option>
+              ) : (
+                depositos.map(dep => (
+                  <option key={dep} value={dep}>{dep}</option>
+                ))
+              )}
             </select>
           </div>
           <div style={{ gridColumn: 'span 2' }}>

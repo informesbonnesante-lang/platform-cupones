@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from './supabaseStockClient';
 import { PackagePlus, Tag, Boxes, Save, MapPin, Hash, AlertTriangle } from 'lucide-react';
 
-const NewItemForm = ({ onAddItem }) => {
+const NewItemForm = ({ onAddItem, depositos = [] }) => {
   const [formData, setFormData] = useState({
     nombre: '',
     categoria: 'INSUMOS',
@@ -21,6 +21,14 @@ const NewItemForm = ({ onAddItem }) => {
   const [loadingAreas, setLoadingAreas] = useState(true);
 
   useEffect(() => {
+    if (depositos.length > 0) {
+      setAreas(depositos);
+      const central = depositos.find(a => a.toUpperCase().includes('CENTRAL'));
+      setFormData(prev => ({ ...prev, area: central || depositos[0] }));
+      setLoadingAreas(false);
+      return;
+    }
+
     const fetchDepositos = async () => {
       try {
         const { data, error } = await supabase.from('depositos').select('nombre').order('nombre');
@@ -49,7 +57,7 @@ const NewItemForm = ({ onAddItem }) => {
       }
     };
     fetchDepositos();
-  }, []);
+  }, [depositos]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

@@ -6,7 +6,7 @@ import {
   AlertTriangle, Clock, TrendingUp, TrendingDown, ClipboardList 
 } from 'lucide-react';
 
-const HistoryTable = ({ inventory = [], consumptions = [], entries = [] }) => {
+const HistoryTable = ({ inventory = [], consumptions = [], entries = [], depositos = [] }) => {
   // Estados para filtros
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('TODOS');
@@ -19,14 +19,14 @@ const HistoryTable = ({ inventory = [], consumptions = [], entries = [] }) => {
     const unified = [];
     
     consumptions.forEach(c => {
-      const invItem = inventory.find(i => i.id === c.item_id);
+      const invItem = inventory.find(i => String(i.id) === String(c.item_id));
       unified.push({
         id: `cons_${c.id}`,
         type: 'SALIDA',
         timestamp: c.timestamp,
         itemName: c.item_name || invItem?.nombre || 'Desconocido',
         cantidad: c.cantidad,
-        deposito: invItem?.area || 'Desconocido',
+        deposito: c.departamento || invItem?.area || 'Desconocido',
         responsable: c.staff || 'N/A',
         detalles: `Paciente: ${c.paciente_nombre} (${c.paciente_ci})`,
         fechaObjeto: new Date(c.timestamp)
@@ -34,7 +34,7 @@ const HistoryTable = ({ inventory = [], consumptions = [], entries = [] }) => {
     });
 
     entries.forEach(e => {
-      const invItem = inventory.find(i => i.id === e.item_id);
+      const invItem = inventory.find(i => String(i.id) === String(e.item_id));
       unified.push({
         id: `ent_${e.id}`,
         type: 'ENTRADA',
@@ -73,24 +73,53 @@ const HistoryTable = ({ inventory = [], consumptions = [], entries = [] }) => {
     return diffDays >= 0 && diffDays <= 30;
   }).length;
 
+  const normalize = (str) => {
+    if (!str) return '';
+    return str
+      .toString()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim();
+  };
+
   // Filtrado de la tabla unificada
   const filteredData = combinedData.filter(d => {
-    const term = (searchTerm || '').toLowerCase().trim();
+    const term = normalize(searchTerm);
     const matchesSearch = !term || 
-                          (d.itemName && d.itemName.toLowerCase().includes(term)) ||
-                          (d.responsable && d.responsable.toLowerCase().includes(term)) ||
-                          (d.detalles && d.detalles.toLowerCase().includes(term));
+                          normalize(d.itemName).includes(term) ||
+                          normalize(d.responsable).includes(term) ||
+                          normalize(d.detalles).includes(term);
     
     const matchesType = filterType === 'TODOS' || d.type === filterType;
-    const matchesDeposito = filterDeposito === 'TODOS' || d.deposito === filterDeposito;
+    const matchesDeposito = filterDeposito === 'TODOS' || normalize(d.deposito) === normalize(filterDeposito);
     
-    const matchesDateFrom = !dateFrom || d.fechaObjeto >= new Date(dateFrom);
-    const matchesDateTo = !dateTo || d.fechaObjeto <= new Date(new Date(dateTo).setHours(23,59,59,999));
+    // Normalize dates to YYYY-MM-DD for 100% robust string lexicographical comparison (ignores timezones/offsets)
+    const itemDateStr = d.timestamp ? d.timestamp.split('T')[0] : '';
+    const matchesDateFrom = !dateFrom || itemDateStr >= dateFrom;
+    const matchesDateTo = !dateTo || itemDateStr <= dateTo;
 
     return matchesSearch && matchesType && matchesDeposito && matchesDateFrom && matchesDateTo;
   });
 
-  const depositosList = ['TODOS', ...new Set(inventory.map(i => i.area).filter(Boolean))];
+  const uniqueDepositos = [];
+  const seenNormalized = new Set();
+  
+  const rawList = [
+    ...depositos,
+    ...inventory.map(i => i.area).filter(Boolean),
+    ...consumptions.map(c => c.departamento).filter(Boolean)
+  ];
+  
+  rawList.forEach(dep => {
+    const norm = normalize(dep);
+    if (norm && !seenNormalized.has(norm)) {
+      seenNormalized.add(norm);
+      uniqueDepositos.push(dep);
+    }
+  });
+
+  const depositosList = ['TODOS', ...uniqueDepositos];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>

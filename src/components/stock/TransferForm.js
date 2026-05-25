@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Plus, Trash2, ArrowRightLeft, User, MapPin } from 'lucide-react';
 
-const TransferForm = ({ inventory, onSubmit }) => {
+const TransferForm = ({ inventory, onSubmit, depositos = [] }) => {
   const [header, setHeader] = useState({
     responsable: '',
   });
@@ -12,7 +12,12 @@ const TransferForm = ({ inventory, onSubmit }) => {
     { itemId: '', toArea: '', cantidad: 1, tipoCantidad: 'UNIDADES' }
   ]);
 
-  const areas = ['FARMACIA', 'ESTÉTICA', 'ENFERMERÍA', 'RECEPCIÓN', 'LABORATORIO', 'DEPÓSITO CENTRAL'];
+  const areas = depositos.length > 0 ? depositos : ['FARMACIA', 'ESTÉTICA', 'ENFERMERÍA', 'RECEPCIÓN', 'LABORATORIO', 'DEPÓSITO CENTRAL'];
+
+  const normalize = (str) => {
+    if (!str) return '';
+    return str.toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+  };
 
   const addRow = () => {
     setItems([...items, { itemId: '', toArea: '', cantidad: 1, tipoCantidad: 'UNIDADES' }]);
@@ -39,7 +44,7 @@ const TransferForm = ({ inventory, onSubmit }) => {
     // Comprobar que no se transfiera al mismo depósito de origen
     const invalidTransfers = items.filter(item => {
       const invItem = inventory.find(inv => inv.id === item.itemId);
-      return invItem && invItem.area === item.toArea;
+      return invItem && normalize(invItem.area) === normalize(item.toArea);
     });
 
     if (invalidTransfers.length > 0) {
@@ -135,7 +140,7 @@ const TransferForm = ({ inventory, onSubmit }) => {
                       required
                     >
                       <option value="">Destino...</option>
-                      {areas.filter(a => a !== selectedItem?.area).map(area => (
+                      {areas.filter(a => normalize(a) !== normalize(selectedItem?.area)).map(area => (
                         <option key={area} value={area}>{area}</option>
                       ))}
                     </select>

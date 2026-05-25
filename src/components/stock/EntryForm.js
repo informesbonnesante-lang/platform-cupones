@@ -1,13 +1,19 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Plus, Trash2, Truck, FileCheck, Calendar } from 'lucide-react';
+import { Plus, Trash2, Truck, FileCheck, Calendar, Building2 } from 'lucide-react';
 
-const EntryForm = ({ inventory, onSubmit }) => {
+const EntryForm = ({ inventory, onSubmit, depositos = [] }) => {
   const [header, setHeader] = useState({
     proveedor: '',
     nroFactura: ''
   });
+  const [selectedArea, setSelectedArea] = useState('TODOS');
+
+  const normalize = (str) => {
+    if (!str) return '';
+    return str.toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+  };
 
   const [items, setItems] = useState([
     { itemId: '', cantidadIngresada: 1, vencimiento: '' }
@@ -50,10 +56,10 @@ const EntryForm = ({ inventory, onSubmit }) => {
       
       <form onSubmit={handleSubmit}>
         {/* Header Section */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '1.5rem', marginBottom: '2.5rem', padding: '1.5rem', background: 'rgba(20, 184, 166, 0.05)', borderRadius: '12px', border: '1px solid var(--border)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '1.5rem', marginBottom: '2.5rem', padding: '1.5rem', background: 'rgba(20, 184, 166, 0.05)', borderRadius: '12px', border: '1px solid var(--border)' }}>
           <div>
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', fontWeight: 600, fontSize: '0.9rem' }}>
-              <Truck size={16} /> Proveedor
+              <Truck size={16} color="var(--primary)" /> Proveedor
             </label>
             <input 
               type="text" className="input-field" placeholder="Nombre Comercial / Razón Social"
@@ -62,12 +68,27 @@ const EntryForm = ({ inventory, onSubmit }) => {
           </div>
           <div>
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', fontWeight: 600, fontSize: '0.9rem' }}>
-              <FileCheck size={16} /> Nro. Factura
+              <FileCheck size={16} color="var(--primary)" /> Nro. Factura
             </label>
             <input 
               type="text" className="input-field" placeholder="001-002-XXXX"
               value={header.nroFactura} onChange={(e) => setHeader({...header, nroFactura: e.target.value})}
             />
+          </div>
+          <div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', fontWeight: 600, fontSize: '0.9rem' }}>
+              <Building2 size={16} color="var(--primary)" /> Depósito de Carga
+            </label>
+            <select 
+              className="input-field" 
+              value={selectedArea} 
+              onChange={(e) => setSelectedArea(e.target.value)}
+            >
+              <option value="TODOS">Todos los Depósitos</option>
+              {depositos.map(dep => (
+                <option key={dep} value={dep}>{dep}</option>
+              ))}
+            </select>
           </div>
         </div>
 
@@ -91,11 +112,13 @@ const EntryForm = ({ inventory, onSubmit }) => {
                       onChange={(e) => updateItem(index, 'itemId', e.target.value)}
                     >
                       <option value="">Seleccione...</option>
-                      {inventory.map(inv => (
-                        <option key={inv.id} value={inv.id}>
-                          {inv.nombre}
-                        </option>
-                      ))}
+                      {inventory
+                        .filter(inv => selectedArea === 'TODOS' || normalize(inv.area) === normalize(selectedArea))
+                        .map(inv => (
+                          <option key={inv.id} value={inv.id}>
+                            {inv.nombre} ({inv.area || 'SD'})
+                          </option>
+                        ))}
                     </select>
                   </td>
                   <td>
