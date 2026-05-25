@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
-let supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://waszqpcofsthbvdeuqer.supabase.co';
+let supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://wflnfbtnhuoayelajtpr.supabase.co';
 supabaseUrl = supabaseUrl.replace(/\/rest\/v1\/?$/, '').replace(/\/$/, '');
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indhc3pxcGNvZnN0aGJ2ZGV1cWVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczOTc5MjcsImV4cCI6MjA5Mjk3MzkyN30.8bN7brQUpBhUF40e7GsgGBS7Qmfiav99cQad3thJvfE';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmbG5mYnRuaHVvYXllbGFqdHByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0ODkyMzksImV4cCI6MjA5MjA2NTIzOX0.NXKb1Ko0nF57pyW6OGnFlN_R-OGADoO6yHfl6Xf8z4w';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
