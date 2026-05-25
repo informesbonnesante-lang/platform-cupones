@@ -1,44 +1,96 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Search, Filter, Calendar, ArrowDownRight, ArrowUpRight, ArrowRightLeft,
-  AlertTriangle, Clock, TrendingUp, TrendingDown, ClipboardList, Download
+  AlertTriangle, Clock, TrendingUp, TrendingDown, ClipboardList, Download, RefreshCw
 } from 'lucide-react';
+import { supabase } from './supabaseStockClient';
 
 const HistoryTable = ({ inventory = [], consumptions = [], entries = [], transferencias = [], depositos = [], depositosObj = [] }) => {
-  // 1. Applied filter states (These drive the actual data filtering)
+  // 1. Autonomous Data States
+  const [localInventory, setLocalInventory] = useState(inventory);
+  const [localConsumptions, setLocalConsumptions] = useState(consumptions);
+  const [localEntries, setLocalEntries] = useState(entries);
+  const [localTransferencias, setLocalTransferencias] = useState(transferencias);
+  const [localDepositos, setLocalDepositos] = useState(depositos);
+  const [localDepositosObj, setLocalDepositosObj] = useState(depositosObj);
+  const [loading, setLoading] = useState(false);
+
+  // 2. Applied filter states (These drive the actual data filtering)
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('TODOS');
   const [filterDeposito, setFilterDeposito] = useState('TODOS');
   const [desdeFecha, setDesdeFecha] = useState('');
   const [hastaFecha, setHastaFecha] = useState('');
 
-  // 2. Temporary input states (These are bound to the form controls)
+  // 3. Temporary input states (These are bound to the form controls)
   const [searchVal, setSearchVal] = useState('');
   const [typeVal, setTypeVal] = useState('TODOS');
   const [depositoVal, setDepositoVal] = useState('TODOS');
   const [dateFromVal, setDateFromVal] = useState('');
   const [dateToVal, setDateToVal] = useState('');
 
+  // Sync props to state if props change externally
+  useEffect(() => {
+    if (inventory?.length) setLocalInventory(inventory);
+    if (consumptions?.length) setLocalConsumptions(consumptions);
+    if (entries?.length) setLocalEntries(entries);
+    if (transferencias?.length) setLocalTransferencias(transferencias);
+    if (depositos?.length) setLocalDepositos(depositos);
+    if (depositosObj?.length) setLocalDepositosObj(depositosObj);
+  }, [inventory, consumptions, entries, transferencias, depositos, depositosObj]);
+
+  // Fetch all movements independently from Supabase (Bypassing RLS Join errors)
+  const fetchAllMovimientos = async () => {
+    setLoading(true);
+    try {
+      const [inv, cons, ent, dep, trans] = await Promise.all([
+        supabase.from('inventory_items').select('*').order('nombre'),
+        supabase.from('consumptions').select('*').order('timestamp', { ascending: false }),
+        supabase.from('entries').select('*').order('timestamp', { ascending: false }),
+        supabase.from('depositos').select('id, nombre').order('nombre'),
+        supabase.from('transferencias').select('*').order('timestamp', { ascending: false })
+      ]);
+
+      if (inv.data) setLocalInventory(inv.data);
+      if (cons.data) setLocalConsumptions(cons.data);
+      if (ent.data) setLocalEntries(ent.data);
+      if (trans.data) setLocalTransferencias(trans.data);
+      if (dep.data && dep.data.length > 0) {
+        setLocalDepositosObj(dep.data);
+        setLocalDepositos(dep.data.map(d => d.nombre));
+      }
+    } catch (error) {
+      console.error("Error in autonomous fetchAllMovimientos:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 1. 페이지 진입 시 자동 로딩 (Mount)
+  useEffect(() => {
+    fetchAllMovimientos();
+  }, []);
+
   // Build the warehouse memory mapping
   const depMap = useMemo(() => {
     const map = {};
-    depositosObj.forEach(d => {
+    localDepositosObj.forEach(d => {
       if (d.id && d.nombre) {
         map[String(d.id)] = d.nombre;
       }
     });
     return map;
-  }, [depositosObj]);
+  }, [localDepositosObj]);
 
   // Unificar y ordenar datos
   const combinedData = useMemo(() => {
     const unified = [];
     
     // 1. 소비 데이터 (Consumptions)
-    consumptions.forEach(c => {
-      const invItem = inventory.find(i => String(i.id) === String(c.item_id));
+    localConsumptions.forEach(c => {
+      const invItem = localInventory.find(i => String(i.id) === String(c.item_id));
       const depNombre = depMap[String(c.deposito_id)] || c.departamento || invItem?.area || 'Depósito Central';
       unified.push({
         id: `cons_${c.id}`,
@@ -54,8 +106,8 @@ const HistoryTable = ({ inventory = [], consumptions = [], entries = [], transfe
     });
 
     // 2. 입고 데이터 (Entries)
-    entries.forEach(e => {
-      const invItem = inventory.find(i => String(i.id) === String(e.item_id));
+    localEntries.forEach(e => {
+      const invItem = localInventory.find(i => String(i.id) === String(e.item_id));
       const depNombre = depMap[String(e.deposito_id)] || invItem?.area || 'Depósito Central';
       unified.push({
         id: `ent_${e.id}`,
@@ -71,7 +123,7 @@ const HistoryTable = ({ inventory = [], consumptions = [], entries = [], transfe
     });
 
     // 3. 이동 데이터 (Transferencias)
-    transferencias.forEach(t => {
+    localTransferencias.forEach(t => {
       unified.push({
         id: `trans_${t.id}`,
         type: 'Transferencia',
@@ -86,7 +138,7 @@ const HistoryTable = ({ inventory = [], consumptions = [], entries = [], transfe
     });
 
     return unified.sort((a, b) => b.fechaObjeto - a.fechaObjeto);
-  }, [consumptions, entries, transferencias, inventory, depMap]);
+  }, [localConsumptions, localEntries, localTransferencias, localInventory, depMap]);
 
   const normalize = (str) => {
     if (!str) return '';
@@ -123,16 +175,17 @@ const HistoryTable = ({ inventory = [], consumptions = [], entries = [], transfe
     });
   }, [combinedData, searchTerm, filterType, filterDeposito, desdeFecha, hastaFecha]);
 
-  // Aplicar filtros manuales con el botón
+  // 2. Buscar 버튼 연동 & Supabase 재조회
   const handleApplyFilters = () => {
     setSearchTerm(searchVal);
     setFilterType(typeVal);
     setFilterDeposito(depositoVal);
     setDesdeFecha(dateFromVal);
     setHastaFecha(dateToVal);
+    fetchAllMovimientos(); // Fetch fresh data on click
   };
 
-  // Limpiar todos los filtros y restablecer valores por defecto
+  // 3. Limpiar Filtros 버튼 로직
   const handleClearFilters = () => {
     setSearchVal('');
     setTypeVal('TODOS');
@@ -145,6 +198,8 @@ const HistoryTable = ({ inventory = [], consumptions = [], entries = [], transfe
     setFilterDeposito('TODOS');
     setDesdeFecha('');
     setHastaFecha('');
+    
+    fetchAllMovimientos(); // Reload entire dataset
   };
 
   // KPIs calculations based on filtered data
@@ -157,17 +212,17 @@ const HistoryTable = ({ inventory = [], consumptions = [], entries = [], transfe
   }, [filteredData]);
 
   const lowStockCount = useMemo(() => {
-    return inventory.filter(i => i.current_stock < (i.stock_minimo || 5)).length;
-  }, [inventory]);
+    return localInventory.filter(i => i.current_stock < (i.stock_minimo || 5)).length;
+  }, [localInventory]);
 
   const expiringCount = useMemo(() => {
-    return inventory.filter(i => {
+    return localInventory.filter(i => {
       if (!i.vencimiento || i.vencimiento === 'N/A') return false;
       const expDate = new Date(i.vencimiento);
       const diffDays = (expDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24);
       return diffDays >= 0 && diffDays <= 30;
     }).length;
-  }, [inventory]);
+  }, [localInventory]);
 
   // Deduplicación del menú de depósitos
   const depositosList = useMemo(() => {
@@ -175,11 +230,11 @@ const HistoryTable = ({ inventory = [], consumptions = [], entries = [], transfe
     const seenNormalized = new Set();
     
     const rawList = [
-      ...depositos,
-      ...inventory.map(i => i.area).filter(Boolean),
-      ...consumptions.map(c => c.departamento).filter(Boolean),
-      ...transferencias.map(t => t.from_area).filter(Boolean),
-      ...transferencias.map(t => t.to_area).filter(Boolean)
+      ...localDepositos,
+      ...localInventory.map(i => i.area).filter(Boolean),
+      ...localConsumptions.map(c => c.departamento).filter(Boolean),
+      ...localTransferencias.map(t => t.from_area).filter(Boolean),
+      ...localTransferencias.map(t => t.to_area).filter(Boolean)
     ];
     
     rawList.forEach(dep => {
@@ -191,7 +246,7 @@ const HistoryTable = ({ inventory = [], consumptions = [], entries = [], transfe
     });
 
     return ['TODOS', ...uniqueDepositos];
-  }, [depositos, inventory, consumptions, transferencias]);
+  }, [localDepositos, localInventory, localConsumptions, localTransferencias]);
 
   // Exportar Excel (CSV)
   const exportToCSV = () => {
@@ -229,27 +284,48 @@ const HistoryTable = ({ inventory = [], consumptions = [], entries = [], transfe
           </h2>
           <p className="text-muted" style={{ margin: 0 }}>Historial completo de ingresos, salidas y alertas de inventario.</p>
         </div>
-        <button 
-          onClick={exportToCSV}
-          style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '0.5rem', 
-            background: 'var(--primary)', 
-            color: 'white', 
-            padding: '0.6rem 1.2rem', 
-            borderRadius: '8px', 
-            border: 'none', 
-            cursor: 'pointer', 
-            fontWeight: 'bold',
-            transition: 'background 0.2s',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-          }}
-          onMouseOver={(e) => e.currentTarget.style.background = 'var(--primary-dark)'}
-          onMouseOut={(e) => e.currentTarget.style.background = 'var(--primary)'}
-        >
-          <Download size={16} /> Exportar Excel (CSV)
-        </button>
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <button 
+            onClick={fetchAllMovimientos}
+            disabled={loading}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'rgba(3, 111, 114, 0.1)',
+              color: 'var(--primary-dark)',
+              border: 'none',
+              padding: '0.6rem',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+            title="Recargar datos"
+          >
+            <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+          </button>
+          <button 
+            onClick={exportToCSV}
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '0.5rem', 
+              background: 'var(--primary)', 
+              color: 'white', 
+              padding: '0.6rem 1.2rem', 
+              borderRadius: '8px', 
+              border: 'none', 
+              cursor: 'pointer', 
+              fontWeight: 'bold',
+              transition: 'background 0.2s',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.background = 'var(--primary-dark)'}
+            onMouseOut={(e) => e.currentTarget.style.background = 'var(--primary)'}
+          >
+            <Download size={16} /> Exportar Excel (CSV)
+          </button>
+        </div>
       </div>
 
       {/* DASHBOARD KPIs */}
@@ -260,7 +336,7 @@ const HistoryTable = ({ inventory = [], consumptions = [], entries = [], transfe
           </div>
           <div>
             <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)' }}>Ingresos (Filtrado)</p>
-            <h3 style={{ margin: 0, fontSize: '1.5rem', color: 'var(--text-main)' }}>{ingresosMes} unds.</h3>
+            <h3 style={{ margin: 0, fontSize: '1.5rem', color: 'var(--text-main)' }}>{loading ? '...' : `${ingresosMes} unds.`}</h3>
           </div>
         </div>
 
@@ -270,7 +346,7 @@ const HistoryTable = ({ inventory = [], consumptions = [], entries = [], transfe
           </div>
           <div>
             <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)' }}>Salidas / Consumos</p>
-            <h3 style={{ margin: 0, fontSize: '1.5rem', color: 'var(--text-main)' }}>{salidasMes} unds.</h3>
+            <h3 style={{ margin: 0, fontSize: '1.5rem', color: 'var(--text-main)' }}>{loading ? '...' : `${salidasMes} unds.`}</h3>
           </div>
         </div>
 
@@ -280,7 +356,7 @@ const HistoryTable = ({ inventory = [], consumptions = [], entries = [], transfe
           </div>
           <div>
             <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)' }}>Total Movimientos</p>
-            <h3 style={{ margin: 0, fontSize: '1.5rem', color: 'var(--text-main)' }}>{filteredData.length} ítems</h3>
+            <h3 style={{ margin: 0, fontSize: '1.5rem', color: 'var(--text-main)' }}>{loading ? '...' : `${filteredData.length} ítems`}</h3>
           </div>
         </div>
 
@@ -366,6 +442,7 @@ const HistoryTable = ({ inventory = [], consumptions = [], entries = [], transfe
             Limpiar Filtros
           </button>
           <button 
+            id="Buscar"
             onClick={handleApplyFilters}
             style={{ 
               display: 'flex', 
@@ -405,7 +482,13 @@ const HistoryTable = ({ inventory = [], consumptions = [], entries = [], transfe
               </tr>
             </thead>
             <tbody>
-              {filteredData.length > 0 ? filteredData.map(row => (
+              {loading ? (
+                <tr>
+                  <td colSpan="7" style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+                    <RefreshCw className="animate-spin inline mr-2" size={16} /> Cargando registros en tiempo real...
+                  </td>
+                </tr>
+              ) : filteredData.length > 0 ? filteredData.map(row => (
                 <tr key={row.id} style={{ borderBottom: '1px solid var(--border)' }}>
                   <td style={{ padding: '1rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                     {row.fechaObjeto.toLocaleString()}
