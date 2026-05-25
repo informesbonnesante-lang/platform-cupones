@@ -25,6 +25,7 @@ function App() {
   const [consumptions, setConsumptions] = useState([]);
   const [entries, setEntries] = useState([]);
   const [depositos, setDepositos] = useState([]);
+  const [depositosObj, setDepositosObj] = useState([]);
   const [transferencias, setTransferencias] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -83,7 +84,7 @@ function App() {
         supabase.from('inventory_items').select('*').order('nombre'),
         supabase.from('consumptions').select('*').order('timestamp', { ascending: false }),
         supabase.from('entries').select('*').order('timestamp', { ascending: false }),
-        supabase.from('depositos').select('nombre').order('nombre'),
+        supabase.from('depositos').select('id, nombre').order('nombre'),
         supabase.from('transferencias').select('*').order('timestamp', { ascending: false })
       ]);
 
@@ -92,9 +93,15 @@ function App() {
       if (ent.data) setEntries(ent.data);
       if (trans.data) setTransferencias(trans.data);
       if (dep.data && dep.data.length > 0) {
+        setDepositosObj(dep.data);
         setDepositos(dep.data.map(d => d.nombre));
       } else {
         setDepositos(['DEPÓSITO CENTRAL', 'ESTÉTICA', 'FARMACIA']);
+        setDepositosObj([
+          { id: 'central', nombre: 'DEPÓSITO CENTRAL' },
+          { id: 'estetica', nombre: 'ESTÉTICA' },
+          { id: 'farmacia', nombre: 'FARMACIA' }
+        ]);
       }
     } catch (err) {
       console.error('Error fetching data:', err);
@@ -315,6 +322,7 @@ function App() {
           entries={entries} 
           transferencias={transferencias} 
           depositos={depositos} 
+          depositosObj={depositosObj}
         />;
       case 'backups':
         return <Backups 

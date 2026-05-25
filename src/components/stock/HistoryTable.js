@@ -6,7 +6,7 @@ import {
   AlertTriangle, Clock, TrendingUp, TrendingDown, ClipboardList, Download
 } from 'lucide-react';
 
-const HistoryTable = ({ inventory = [], consumptions = [], entries = [], transferencias = [], depositos = [] }) => {
+const HistoryTable = ({ inventory = [], consumptions = [], entries = [], transferencias = [], depositos = [], depositosObj = [] }) => {
   // 1. Applied filter states (These drive the actual data filtering)
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('TODOS');
@@ -21,6 +21,17 @@ const HistoryTable = ({ inventory = [], consumptions = [], entries = [], transfe
   const [dateFromVal, setDateFromVal] = useState('');
   const [dateToVal, setDateToVal] = useState('');
 
+  // Build the warehouse memory mapping
+  const depMap = useMemo(() => {
+    const map = {};
+    depositosObj.forEach(d => {
+      if (d.id && d.nombre) {
+        map[String(d.id)] = d.nombre;
+      }
+    });
+    return map;
+  }, [depositosObj]);
+
   // Unificar y ordenar datos
   const combinedData = useMemo(() => {
     const unified = [];
@@ -28,32 +39,34 @@ const HistoryTable = ({ inventory = [], consumptions = [], entries = [], transfe
     // 1. 소비 데이터 (Consumptions)
     consumptions.forEach(c => {
       const invItem = inventory.find(i => String(i.id) === String(c.item_id));
+      const depNombre = depMap[String(c.deposito_id)] || c.departamento || invItem?.area || 'Depósito Central';
       unified.push({
         id: `cons_${c.id}`,
         type: 'Consumo',
-        timestamp: c.timestamp,
+        timestamp: c.timestamp || c.created_at,
         itemName: c.item_name || invItem?.nombre || 'Desconocido',
-        cantidad: c.cantidad,
-        deposito: c.departamento || invItem?.area || 'Desconocido',
-        responsable: c.staff || 'N/A',
+        cantidad: c.cantidad || 0,
+        deposito: depNombre,
+        responsable: c.staff || c.responsable || 'N/A',
         detalles: c.observaciones || `Paciente: ${c.paciente_nombre} (${c.paciente_ci})`,
-        fechaObjeto: new Date(c.timestamp)
+        fechaObjeto: new Date(c.timestamp || c.created_at)
       });
     });
 
     // 2. 입고 데이터 (Entries)
     entries.forEach(e => {
       const invItem = inventory.find(i => String(i.id) === String(e.item_id));
+      const depNombre = depMap[String(e.deposito_id)] || invItem?.area || 'Depósito Central';
       unified.push({
         id: `ent_${e.id}`,
         type: 'Ingreso',
-        timestamp: e.timestamp,
+        timestamp: e.timestamp || e.created_at,
         itemName: e.item_name || invItem?.nombre || 'Desconocido',
-        cantidad: e.cantidad_ingresada,
-        deposito: invItem?.area || 'Desconocido',
-        responsable: e.usuario_registro || 'N/A',
+        cantidad: e.cantidad_ingresada || e.cantidad || 0,
+        deposito: depNombre,
+        responsable: e.usuario_registro || e.responsable || 'N/A',
         detalles: e.observaciones || `Prov: ${e.proveedor} | Fact: ${e.nro_factura || 'S/N'}`,
-        fechaObjeto: new Date(e.timestamp)
+        fechaObjeto: new Date(e.timestamp || e.created_at)
       });
     });
 
@@ -64,8 +77,8 @@ const HistoryTable = ({ inventory = [], consumptions = [], entries = [], transfe
         type: 'Transferencia',
         timestamp: t.timestamp,
         itemName: t.item_name || 'Desconocido',
-        cantidad: t.cantidad,
-        deposito: t.from_area && t.to_area ? `${t.from_area} -> ${t.to_area}` : (t.to_area || 'Desconocido'),
+        cantidad: t.cantidad || 0,
+        deposito: t.from_area && t.to_area ? `${t.from_area} -> ${t.to_area}` : (t.to_area || 'Depósito Central'),
         responsable: t.responsable || 'N/A',
         detalles: `Origen: ${t.from_area || 'SD'} | Destino: ${t.to_area || 'SD'}`,
         fechaObjeto: new Date(t.timestamp)
@@ -73,7 +86,7 @@ const HistoryTable = ({ inventory = [], consumptions = [], entries = [], transfe
     });
 
     return unified.sort((a, b) => b.fechaObjeto - a.fechaObjeto);
-  }, [consumptions, entries, transferencias, inventory]);
+  }, [consumptions, entries, transferencias, inventory, depMap]);
 
   const normalize = (str) => {
     if (!str) return '';
