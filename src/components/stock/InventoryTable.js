@@ -159,6 +159,7 @@ const InventoryTable = ({ inventory, userRole, onDelete, onUpdate }) => {
               <th>Vencimiento</th>
               <th style={{ textAlign: 'center' }}>Stock Inicial</th>
               <th style={{ textAlign: 'center' }}>Saldo (Actual)</th>
+              <th style={{ textAlign: 'center' }}>Stock Mínimo</th>
               <th>Estado</th>
               {userRole === 'ADMIN' && <th style={{ textAlign: 'center' }}>Acciones</th>}
             </tr>
@@ -224,6 +225,9 @@ const InventoryTable = ({ inventory, userRole, onDelete, onUpdate }) => {
                       <span style={{ fontWeight: 700, fontSize: '1.1rem' }}>{item.current_stock}</span> <small className="text-muted" style={{ fontWeight: 400, fontSize: '0.8rem' }}>{item.unidad}</small>
                     </div>
                   )}
+                </td>
+                <td className="text-center text-slate-500 font-medium" style={{ textAlign: 'center' }}>
+                  {item.stock_minimo ?? 0} <span className="text-xs font-normal text-slate-400">{item.unidad}</span>
                 </td>
                 <td>
                   {(() => {
