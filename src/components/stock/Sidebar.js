@@ -6,8 +6,7 @@ import {
   MinusCircle, 
   PlusCircle, 
   Package, 
-  History, 
-  Settings,
+  FileText,
   Database,
   ArrowRightLeft
 } from 'lucide-react';
@@ -20,7 +19,7 @@ const Sidebar = ({ activeTab, setActiveTab, userRole }) => {
     { id: 'transfer', label: 'Transferencia', icon: <ArrowRightLeft size={20} />, roles: ['ADMIN', 'SUPERVISOR'] },
     { id: 'new-item', label: 'Nuevo Ítem', icon: <PlusCircle size={20} />, roles: ['ADMIN'] },
     { id: 'inventory', label: 'Stock e Inventario', icon: <Package size={20} />, roles: ['ADMIN', 'SUPERVISOR'] },
-    { id: 'history', label: 'Trazabilidad', icon: <History size={20} />, roles: ['ADMIN', 'SUPERVISOR'] },
+    { id: 'report-integral', label: 'Reporte Integral', icon: <FileText size={20} />, roles: ['ADMIN', 'SUPERVISOR'] },
     { id: 'web-manager', label: 'Gestión Web', icon: <LayoutDashboard size={20} />, roles: ['ADMIN'] },
     { id: 'backups', label: 'Backups y Reportes', icon: <Database size={20} />, roles: ['ADMIN'] },
   ];

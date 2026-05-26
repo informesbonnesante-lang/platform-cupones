@@ -16,11 +16,11 @@ const EntryForm = ({ inventory, onSubmit, depositos = [] }) => {
   };
 
   const [items, setItems] = useState([
-    { itemId: '', cantidadIngresada: 1, vencimiento: '' }
+    { itemId: '', cantidadIngresada: 1, unidad: 'UNIDAD', vencimiento: '' }
   ]);
 
   const addRow = () => {
-    setItems([...items, { itemId: '', cantidadIngresada: 1, vencimiento: '' }]);
+    setItems([...items, { itemId: '', cantidadIngresada: 1, unidad: 'UNIDAD', vencimiento: '' }]);
   };
 
   const removeRow = (index) => {
@@ -31,19 +31,28 @@ const EntryForm = ({ inventory, onSubmit, depositos = [] }) => {
   const updateItem = (index, field, value) => {
     const newItems = [...items];
     newItems[index][field] = value;
+
+    // Dynamic unit lookup from catalog when item is selected
+    if (field === 'itemId') {
+      const selectedProduct = inventory.find(inv => inv.id === value);
+      if (selectedProduct) {
+        newItems[index]['unidad'] = selectedProduct.unidad || 'UNIDAD';
+      }
+    }
+
     setItems(newItems);
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!header.proveedor || items.some(i => !i.itemId || i.cantidadIngresada <= 0 || !i.vencimiento)) {
-      alert('Favor completar todos los datos: Proveedor, Ítems y sus correspondientes Fechas de Vencimiento (Obligatario)');
+      alert('Favor completar todos los datos: Proveedor, Ítems y sus correspondientes Fechas de Vencimiento (Obligatorio)');
       return;
     }
     onSubmit({ ...header, items });
     
     // Reset
-    setItems([{ itemId: '', cantidadIngresada: 1, vencimiento: '' }]);
+    setItems([{ itemId: '', cantidadIngresada: 1, unidad: 'UNIDAD', vencimiento: '' }]);
     setHeader({
       proveedor: '',
       nroFactura: ''
@@ -97,10 +106,11 @@ const EntryForm = ({ inventory, onSubmit, depositos = [] }) => {
           <table style={{ width: '100%' }}>
             <thead style={{ background: 'var(--background)' }}>
               <tr>
-                <th style={{ width: '40%' }}>Ítem / Producto</th>
-                <th style={{ width: '15%' }}>Cantidad</th>
-                <th style={{ width: '30%' }}>Vencimiento (Oblig.)</th>
-                <th style={{ width: '15%', textAlign: 'center' }}>Acción</th>
+                <th style={{ width: '35%' }}>Ítem / Producto</th>
+                <th style={{ width: '12%' }}>Cantidad</th>
+                <th style={{ width: '18%' }}>Unidad de Medida</th>
+                <th style={{ width: '25%' }}>Vencimiento (Oblig.)</th>
+                <th style={{ width: '10%', textAlign: 'center' }}>Acción</th>
               </tr>
             </thead>
             <tbody>
@@ -122,16 +132,24 @@ const EntryForm = ({ inventory, onSubmit, depositos = [] }) => {
                     </select>
                   </td>
                   <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <input 
-                        type="number" className="input-field" min="1"
-                        style={{ width: '80px' }}
-                        value={item.cantidadIngresada} onChange={(e) => updateItem(index, 'cantidadIngresada', e.target.value)}
-                      />
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                        {inventory.find(i => i.id === item.itemId)?.unidad === 'CAJA' ? 'Cajas' : 'Unds'}
-                      </span>
-                    </div>
+                    <input 
+                      type="number" className="input-field" min="1"
+                      value={item.cantidadIngresada} onChange={(e) => updateItem(index, 'cantidadIngresada', e.target.value)}
+                    />
+                  </td>
+                  <td>
+                    <select 
+                      className="input-field" value={item.unidad || 'UNIDAD'}
+                      onChange={(e) => updateItem(index, 'unidad', e.target.value)}
+                    >
+                      <option value="UNIDAD">Unidad (U)</option>
+                      <option value="AMPOLLA">Ampolla</option>
+                      <option value="FRASCO">Frasco</option>
+                      <option value="CAJA">Caja</option>
+                      <option value="ML">Mililitros (ml)</option>
+                      <option value="BLISTER">Blister</option>
+                      <option value="PAQUETE">Paquete</option>
+                    </select>
                   </td>
                   <td>
                     <input 

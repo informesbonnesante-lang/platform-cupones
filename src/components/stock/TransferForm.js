@@ -9,7 +9,7 @@ const TransferForm = ({ inventory, onSubmit, depositos = [] }) => {
   });
 
   const [items, setItems] = useState([
-    { itemId: '', toArea: '', cantidad: 1, tipoCantidad: 'UNIDADES' }
+    { itemId: '', toArea: '', cantidad: 1, unidad: 'UNIDAD', tipoCantidad: 'UNIDADES' }
   ]);
 
   const areas = depositos.length > 0 ? depositos : ['FARMACIA', 'ESTÉTICA', 'ENFERMERÍA', 'RECEPCIÓN', 'LABORATORIO', 'DEPÓSITO CENTRAL'];
@@ -20,7 +20,7 @@ const TransferForm = ({ inventory, onSubmit, depositos = [] }) => {
   };
 
   const addRow = () => {
-    setItems([...items, { itemId: '', toArea: '', cantidad: 1, tipoCantidad: 'UNIDADES' }]);
+    setItems([...items, { itemId: '', toArea: '', cantidad: 1, unidad: 'UNIDAD', tipoCantidad: 'UNIDADES' }]);
   };
 
   const removeRow = (index) => {
@@ -31,6 +31,15 @@ const TransferForm = ({ inventory, onSubmit, depositos = [] }) => {
   const updateItem = (index, field, value) => {
     const newItems = [...items];
     newItems[index][field] = value;
+
+    // Dynamic unit lookup from catalog when item is selected
+    if (field === 'itemId') {
+      const selectedProduct = inventory.find(inv => inv.id === value);
+      if (selectedProduct) {
+        newItems[index]['unidad'] = selectedProduct.unidad || 'UNIDAD';
+      }
+    }
+
     setItems(newItems);
   };
 
@@ -63,10 +72,16 @@ const TransferForm = ({ inventory, onSubmit, depositos = [] }) => {
       return;
     }
 
-    onSubmit({ ...header, items });
+    // Map selected unit to quantity type for backward compatibility
+    const itemsWithQuantityType = items.map(item => ({
+      ...item,
+      tipoCantidad: item.unidad === 'CAJA' ? 'CAJAS' : 'UNIDADES'
+    }));
+
+    onSubmit({ ...header, items: itemsWithQuantityType });
     
     // Reset
-    setItems([{ itemId: '', toArea: '', cantidad: 1, tipoCantidad: 'UNIDADES' }]);
+    setItems([{ itemId: '', toArea: '', cantidad: 1, unidad: 'UNIDAD', tipoCantidad: 'UNIDADES' }]);
     setHeader({ responsable: '' });
   };
 
@@ -108,9 +123,10 @@ const TransferForm = ({ inventory, onSubmit, depositos = [] }) => {
           <table style={{ width: '100%' }}>
             <thead style={{ background: 'var(--background)' }}>
               <tr>
-                <th style={{ width: '45%' }}>Ítem / Origen</th>
-                <th style={{ width: '25%' }}>Depósito Destino</th>
-                <th style={{ width: '20%' }}>Cantidad</th>
+                <th style={{ width: '35%' }}>Ítem / Origen</th>
+                <th style={{ width: '22%' }}>Depósito Destino</th>
+                <th style={{ width: '15%' }}>Cantidad</th>
+                <th style={{ width: '23%' }}>Unidad de Medida</th>
                 <th style={{ width: '10%', textAlign: 'center' }}>Acción</th>
               </tr>
             </thead>
@@ -146,29 +162,25 @@ const TransferForm = ({ inventory, onSubmit, depositos = [] }) => {
                     </select>
                   </td>
                   <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <input 
-                        type="number" className="input-field" min="1"
-                        style={{ width: '80px' }}
-                        value={item.cantidad} onChange={(e) => updateItem(index, 'cantidad', e.target.value)}
-                        required
-                      />
-                      {selectedItem?.unidad === 'CAJA' ? (
-                        <select 
-                          className="input-field" 
-                          style={{ width: '110px', padding: '0.75rem 0.5rem' }}
-                          value={item.tipoCantidad || 'UNIDADES'} 
-                          onChange={(e) => updateItem(index, 'tipoCantidad', e.target.value)}
-                        >
-                          <option value="UNIDADES">Unds</option>
-                          <option value="CAJAS">Cajas</option>
-                        </select>
-                      ) : (
-                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                          Unds
-                        </span>
-                      )}
-                    </div>
+                    <input 
+                      type="number" className="input-field" min="1"
+                      value={item.cantidad} onChange={(e) => updateItem(index, 'cantidad', e.target.value)}
+                      required
+                    />
+                  </td>
+                  <td>
+                    <select 
+                      className="input-field" value={item.unidad || 'UNIDAD'}
+                      onChange={(e) => updateItem(index, 'unidad', e.target.value)}
+                    >
+                      <option value="UNIDAD">Unidad (U)</option>
+                      <option value="AMPOLLA">Ampolla</option>
+                      <option value="FRASCO">Frasco</option>
+                      <option value="CAJA">Caja</option>
+                      <option value="ML">Mililitros (ml)</option>
+                      <option value="BLISTER">Blister</option>
+                      <option value="PAQUETE">Paquete</option>
+                    </select>
                   </td>
                   <td style={{ textAlign: 'center' }}>
                     <button 

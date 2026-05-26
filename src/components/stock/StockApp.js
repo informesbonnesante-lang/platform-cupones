@@ -10,7 +10,7 @@ import Dashboard from './Dashboard';
 import ConsumptionForm from './ConsumptionForm';
 import EntryForm from './EntryForm';
 import InventoryTable from './InventoryTable';
-import HistoryTable from './HistoryTable';
+import ReporteIntegral from './ReporteIntegral';
 import Backups from './Backups';
 import NewItemForm from './NewItemForm';
 import HeroManager from './HeroManager';
@@ -149,7 +149,7 @@ function App() {
           .eq('id', item.itemId);
       }
       fetchData();
-      setActiveTab('history');
+      setActiveTab('inventory');
     }
   };
 
@@ -159,7 +159,7 @@ function App() {
 
     const newEntries = items.map(itemRow => {
       const inventoryItem = inventory.find(i => i.id === itemRow.itemId);
-      const cantPorCaja = inventoryItem?.unidad === 'CAJA' ? (inventoryItem.cant_por_caja || 1) : 1;
+      const cantPorCaja = itemRow.unidad === 'CAJA' ? (inventoryItem?.cant_por_caja || 1) : 1;
       const totalUnidadesIngresadas = parseInt(itemRow.cantidadIngresada) * cantPorCaja;
       
       return {
@@ -169,7 +169,7 @@ function App() {
         nro_factura: header.nroFactura.toUpperCase(),
         fecha_vencimiento: itemRow.vencimiento,
         timestamp: new Date().toISOString(),
-        item_name: inventoryItem?.nombre || 'DESCONOCIDO',
+        item_name: `${inventoryItem?.nombre || 'DESCONOCIDO'} (${itemRow.unidad})`,
         usuario_registro: userId
       };
     });
@@ -179,18 +179,19 @@ function App() {
     if (!entError) {
       for (const item of items) {
         const currentItem = inventory.find(i => i.id === item.itemId);
-        const cantPorCaja = currentItem.unidad === 'CAJA' ? (currentItem.cant_por_caja || 1) : 1;
+        const cantPorCaja = item.unidad === 'CAJA' ? (currentItem.cant_por_caja || 1) : 1;
         const totalUnidadesIngresadas = parseInt(item.cantidadIngresada) * cantPorCaja;
         await supabase
           .from('inventory_items')
           .update({ 
             current_stock: currentItem.current_stock + totalUnidadesIngresadas,
-            vencimiento: item.vencimiento
+            vencimiento: item.vencimiento,
+            unidad: item.unidad
           })
           .eq('id', item.itemId);
       }
       fetchData();
-      setActiveTab('history');
+      setActiveTab('inventory');
     }
   };
 
@@ -301,6 +302,7 @@ function App() {
           inventory={inventory} 
           userRole={userRole} 
           onDelete={handleDeleteItem} 
+          onUpdate={fetchData}
         />;
       case 'consume':
         return <ConsumptionForm inventory={inventory} onSubmit={handleConsumption} depositos={depositos} />;
@@ -315,15 +317,8 @@ function App() {
       case 'web-manager':
         if (userRole !== 'ADMIN') return <Dashboard inventory={inventory} />;
         return <HeroManager />;
-      case 'history':
-        return <HistoryTable 
-          inventory={inventory} 
-          consumptions={consumptions} 
-          entries={entries} 
-          transferencias={transferencias} 
-          depositos={depositos} 
-          depositosObj={depositosObj}
-        />;
+      case 'report-integral':
+        return <ReporteIntegral />;
       case 'backups':
         return <Backups 
           inventory={inventory} 
