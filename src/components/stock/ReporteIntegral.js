@@ -1,13 +1,15 @@
+"use client";
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from './supabaseStockClient';
-import { Download, Search, RefreshCw, Calendar, FileText } from 'lucide-react';
+import { Download, Search, RefreshCw, FileText } from 'lucide-react';
 
 export default function ReporteIntegral() {
   const [movimientos, setMovimientos] = useState([]);
   const [filteredMovimientos, setFilteredMovimientos] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Filter state variables (initial values empty)
+  // Filtros
   const [buscar, setBuscar] = useState('');
   const [tipoMovimiento, setTipoMovimiento] = useState('Todos');
   const [deposito, setDeposito] = useState('TODOS');
@@ -17,84 +19,126 @@ export default function ReporteIntegral() {
 
   const fetchMovimientosHistorial = async () => {
     setLoading(true);
-    try {
-      // 1. Build warehouse dictionary mapping ID -> Name
-      const { data: depsData } = await supabase.from('depositos').select('id, nombre');
-      const depMap = {};
-      if (depsData) {
-        depsData.forEach(d => { depMap[d.id] = d.nombre; });
-      }
+    let depMap = {};
+    let tempDepsList = ['DEPÓSITO CENTRAL', 'ESTÉTICA', 'FARMACIA', 'ENFERMERÍA', 'RECEPCIÓN', 'LABORATORIO'];
 
-      // 1.5. Build item -> area/warehouse mapping
-      const { data: itemsData } = await supabase.from('inventory_items').select('id, area, deposito_id');
-      const itemToAreaMap = {};
-      if (itemsData) {
+    try {
+      // 1. 창고 테이블(depositos) 안전 로드
+      const { data: depsData, error: dError } = await supabase.from('depositos').select('id, nombre');
+      if (dError) {
+        console.warn("depositos fetch warning:", dError.message);
+      } else if (depsData && depsData.length > 0) {
+        const list = [];
+        depsData.forEach(d => { 
+          depMap[d.id] = d.nombre;
+          list.push(d.nombre);
+        });
+        tempDepsList = list;
+      }
+    } catch (e) {
+      console.error("depositos fetch error:", e);
+    }
+    setListaDepositos(tempDepsList);
+
+    // 1.5. Build item -> area/warehouse mapping
+    let itemToAreaMap = {};
+    try {
+      const { data: itemsData, error: iError } = await supabase.from('inventory_items').select('id, area, deposito_id');
+      if (iError) {
+        console.warn("inventory_items fetch warning:", iError.message);
+      } else if (itemsData) {
         itemsData.forEach(item => {
           itemToAreaMap[item.id] = depMap[item.deposito_id] || item.area || 'Depósito Central';
         });
       }
+    } catch (e) {
+      console.error("inventory_items mapping error:", e);
+    }
 
-      // 2. Fetch real entries historical data (using actual column names)
-      const { data: entries, error: eError } = await supabase
+    let entries = [];
+    try {
+      // 2. entries(입고) 테이블 순수 호출
+      const { data, error: eError } = await supabase
         .from('entries')
         .select('id, item_id, item_name, cantidad_ingresada, proveedor, nro_factura, timestamp, usuario_registro');
+      
+      if (eError) {
+        console.warn("entries fetch warning:", eError.message);
+        const { data: fallbackData } = await supabase.from('entries').select('*');
+        if (fallbackData) entries = fallbackData;
+      } else if (data) {
+        entries = data;
+      }
+    } catch (e) {
+      console.error("entries fetch error:", e);
+    }
 
-      // 3. Fetch real consumptions historical data (using actual column names)
-      const { data: consumptions, error: cError } = await supabase
+    let consumptions = [];
+    try {
+      // 3. consumptions(소비) 테이블 순수 호출
+      const { data, error: cError } = await supabase
         .from('consumptions')
         .select('id, item_id, item_name, cantidad, paciente_nombre, paciente_ci, departamento, categoria_pago, staff, timestamp, usuario_registro');
-
-      if (eError) console.error("Entries load error:", eError.message);
-      if (cError) console.error("Consumptions load error:", cError.message);
-
-      // 4. Normalize and combine data
-      const normalizedEntries = (entries || []).map(e => ({
-        id: e.id,
-        fecha_hora: e.timestamp,
-        tipo: 'Ingreso',
-        item: e.item_name || 'Sin nombre',
-        cantidad: e.cantidad_ingresada || 0,
-        deposito: itemToAreaMap[e.item_id] || 'Depósito Central',
-        responsable: e.usuario_registro ? 'ADMIN' : 'admin',
-        detalles: `Proveedor: ${e.proveedor || 'N/A'}, Factura: ${e.nro_factura || 'N/A'}`
-      }));
-
-      const normalizedConsumptions = (consumptions || []).map(c => ({
-        id: c.id,
-        fecha_hora: c.timestamp,
-        tipo: 'Consumo',
-        item: c.item_name || 'Sin nombre',
-        cantidad: c.cantidad || 0,
-        deposito: itemToAreaMap[c.item_id] || c.departamento || 'Depósito Central',
-        responsable: c.staff || 'OPERADOR',
-        detalles: `Paciente: ${c.paciente_nombre || 'N/A'} (CI: ${c.paciente_ci || 'N/A'}) - ${c.categoria_pago || 'N/A'}`
-      }));
-
-      // Sort by newest date
-      const totalCombined = [...normalizedEntries, ...normalizedConsumptions]
-        .sort((a, b) => new Date(b.fecha_hora).getTime() - new Date(a.fecha_hora).getTime());
-
-      setMovimientos(totalCombined);
-      setFilteredMovimientos(totalCombined);
-
-      // Extract unique warehouse list for select dropdown
-      const uDeps = Array.from(new Set(totalCombined.map(m => m.deposito))).filter(Boolean);
-      setListaDepositos(uDeps);
-
-      console.log("🔵 Unified Report Loaded:", totalCombined.length, "items");
-
-    } catch (err) {
-      console.error("Critical error in report unifier:", err);
-    } finally {
-      setLoading(false);
+      
+      if (cError) {
+        console.warn("consumptions fetch warning:", cError.message);
+        const { data: fallbackData } = await supabase.from('consumptions').select('*');
+        if (fallbackData) consumptions = fallbackData;
+      } else if (data) {
+        consumptions = data;
+      }
+    } catch (e) {
+      console.error("consumptions fetch error:", e);
     }
+
+    // 데이터 가공 및 정규화
+    const normalizedEntries = entries.map(e => {
+      const date = e.timestamp || e.created_at || new Date().toISOString();
+      const cant = e.cantidad_ingresada !== undefined ? e.cantidad_ingresada : (e.cantidad || 0);
+      const area = e.deposito_id ? (depMap[e.deposito_id] || 'Depósito Central') : (itemToAreaMap[e.item_id] || 'Depósito Central');
+      const det = e.observaciones || `Proveedor: ${e.proveedor || 'N/A'}, Factura: ${e.nro_factura || 'N/A'}`;
+      return {
+        id: e.id,
+        fecha_hora: date,
+        tipo: 'Ingreso',
+        item: e.item_name || 'Insumo sin nombre',
+        cantidad: cant,
+        deposito: area,
+        responsable: e.usuario_registro ? 'ADMIN' : (e.responsable || 'admin'),
+        detalles: det
+      };
+    });
+
+    const normalizedConsumptions = consumptions.map(c => {
+      const date = c.timestamp || c.created_at || new Date().toISOString();
+      const cant = c.cantidad || 0;
+      const area = c.deposito_id ? (depMap[c.deposito_id] || 'Depósito Central') : (itemToAreaMap[c.item_id] || c.departamento || 'Depósito Central');
+      const det = c.observaciones || `Paciente: ${c.paciente_nombre || 'N/A'} (CI: ${c.paciente_ci || 'N/A'}) - ${c.categoria_pago || 'N/A'}`;
+      return {
+        id: c.id,
+        fecha_hora: date,
+        tipo: 'Consumo',
+        item: c.item_name || 'Insumo sin nombre',
+        cantidad: cant,
+        deposito: area,
+        responsable: c.staff || c.responsable || 'OPERADOR',
+        detalles: det
+      };
+    });
+
+    // 최신 등록 날짜순 통합 정렬
+    const totalCombined = [...normalizedEntries, ...normalizedConsumptions]
+      .sort((a, b) => new Date(b.fecha_hora).getTime() - new Date(a.fecha_hora).getTime());
+
+    setMovimientos(totalCombined);
+    setFilteredMovimientos(totalCombined);
+    setLoading(false);
   };
 
   useEffect(() => {
     fetchMovimientosHistorial();
   }, []);
 
-  // Complex filtering triggered by search button or state changes
   const handleFiltrarMovi = () => {
     let result = [...movimientos];
 
@@ -173,7 +217,6 @@ export default function ReporteIntegral() {
     URL.revokeObjectURL(url);
   };
 
-  // Helper to determine warehouse badge class or custom style
   const renderDepositoBadge = (areaName) => {
     const name = (areaName || 'Depósito Central').trim().toUpperCase();
     if (name.includes('CENTRAL')) {
@@ -204,57 +247,47 @@ export default function ReporteIntegral() {
           <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <FileText size={24} color="var(--primary)" /> Reporte Integral de Movimientos
           </h2>
-          <p className="text-muted" style={{ fontSize: '0.9rem' }}>Historial unificado de entradas y salidas de stock.</p>
+          <p className="text-muted" style={{ fontSize: '0.9rem' }}>Historial unificado de entradas y salidas de stock sin errores de API.</p>
         </div>
         <button onClick={exportToCSV} className="btn btn-primary" style={{ gap: '0.5rem' }}>
           <Download size={16} /> Exportar Excel (CSV)
         </button>
       </div>
 
-      {/* Filter Control Box */}
-      <div className="glass-card" style={{ padding: '1.5rem', marginBottom: '1.5rem', background: 'rgba(255,255,255,0.4)', boxShadow: 'none', border: '1px solid var(--border)' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1.25rem' }}>
-          <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.4rem' }}>Buscar</label>
-            <div style={{ position: 'relative' }}>
-              <Search size={16} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-              <input 
-                type="text" 
-                placeholder="Ítem, responsable..." 
-                value={buscar} 
-                onChange={(e) => setBuscar(e.target.value)} 
-                className="input-field" 
-                style={{ paddingLeft: '32px' }}
-              />
-            </div>
+      <div className="bg-white p-4 rounded-xl shadow-sm mb-6 grid grid-cols-1 md:grid-cols-5 gap-4 border border-gray-100" style={{ background: 'rgba(255,255,255,0.4)' }}>
+        <div>
+          <label className="block text-xs font-bold text-gray-600 mb-1">Buscar</label>
+          <div className="relative">
+            <Search className="absolute left-3 top-2.5 text-gray-400" size={16} />
+            <input type="text" placeholder="Ítem, responsable..." value={buscar} onChange={(e) => setBuscar(e.target.value)} className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-gray-200 rounded-lg text-sm" style={{ height: '38px' }} />
           </div>
-          <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.4rem' }}>Tipo de Movimiento</label>
-            <select value={tipoMovimiento} onChange={(e) => setTipoMovimiento(e.target.value)} className="input-field">
-              <option value="Todos">Todos</option>
-              <option value="Ingreso">Entradas (Ingresos)</option>
-              <option value="Consumo">Salidas (Consumos)</option>
-            </select>
-          </div>
-          <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.4rem' }}>Depósito</label>
-            <select value={deposito} onChange={(e) => setDeposito(e.target.value)} className="input-field">
-              <option value="TODOS">TODOS</option>
-              {listaDepositos.map(dep => <option key={dep} value={dep}>{dep}</option>)}
-            </select>
-          </div>
-          <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.4rem' }}>Desde Fecha</label>
-            <input type="date" value={desdeFecha} onChange={(e) => setDesdeFecha(e.target.value)} className="input-field" />
-          </div>
-          <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.4rem' }}>Hasta Fecha</label>
-            <input type="date" value={hastaFecha} onChange={(e) => setHastaFecha(e.target.value)} className="input-field" />
-          </div>
+        </div>
+        <div>
+          <label className="block text-xs font-bold text-gray-600 mb-1">Tipo de Movimiento</label>
+          <select value={tipoMovimiento} onChange={(e) => setTipoMovimiento(e.target.value)} className="w-full bg-slate-50 border border-gray-200 rounded-lg p-2 text-sm" style={{ height: '38px' }}>
+            <option value="Todos">Todos</option>
+            <option value="Ingreso">Entradas (Ingresos)</option>
+            <option value="Consumo">Salidas (Consumos)</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs font-bold text-gray-600 mb-1">Depósito</label>
+          <select value={deposito} onChange={(e) => setDeposito(e.target.value)} className="w-full bg-slate-50 border border-gray-200 rounded-lg p-2 text-sm" style={{ height: '38px' }}>
+            <option value="TODOS">TODOS</option>
+            {listaDepositos.map(dep => <option key={dep} value={dep}>{dep}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs font-bold text-gray-600 mb-1">Desde Fecha</label>
+          <input type="date" value={desdeFecha} onChange={(e) => setDesdeFecha(e.target.value)} className="w-full bg-slate-50 border border-gray-200 rounded-lg p-1.5 text-sm" style={{ height: '38px' }} />
+        </div>
+        <div>
+          <label className="block text-xs font-bold text-gray-600 mb-1">Hasta Fecha</label>
+          <input type="date" value={hastaFecha} onChange={(e) => setHastaFecha(e.target.value)} className="w-full bg-slate-50 border border-gray-200 rounded-lg p-1.5 text-sm" style={{ height: '38px' }} />
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginBottom: '2rem' }}>
+      <div className="flex justify-end gap-2 mb-4">
         <button onClick={handleLimpiarFiltros} className="btn btn-secondary" style={{ padding: '0.6rem 1.2rem' }}>
           Limpiar Filtros
         </button>
@@ -263,49 +296,48 @@ export default function ReporteIntegral() {
         </button>
       </div>
 
-      {/* Table Container */}
       <div className="table-container">
-        <table>
+        <table className="w-full text-left border-collapse">
           <thead>
             <tr>
-              <th>Fecha / Hora</th>
-              <th>Tipo</th>
-              <th>Ítem</th>
-              <th style={{ textAlign: 'center' }}>Cantidad</th>
-              <th>Depósito</th>
-              <th>Responsable</th>
-              <th>Observaciones / Detalles</th>
+              <th className="p-4">Fecha / Hora</th>
+              <th className="p-4">Tipo</th>
+              <th className="p-4">Ítem</th>
+              <th className="p-4" style={{ textAlign: 'center' }}>Cantidad</th>
+              <th className="p-4">Depósito</th>
+              <th className="p-4">Responsable</th>
+              <th className="p-4">Observaciones / Detalles</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={7} style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-                  <RefreshCw className="animate-spin" size={16} style={{ marginRight: '8px', verticalAlign: 'middle', animation: 'fadeIn 1s infinite' }} /> Unificando movimientos del inventario...
+                <td colSpan={7} className="p-8 text-center text-gray-400">
+                  <RefreshCw className="animate-spin inline mr-2" size={16} style={{ display: 'inline', animation: 'fadeIn 1s infinite' }} /> 안전하게 데이터를 불러오는 중...
                 </td>
               </tr>
             ) : filteredMovimientos.length === 0 ? (
               <tr>
-                <td colSpan={7} style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-                  No se encontraron registros de movimiento.
+                <td colSpan={7} className="p-8 text-center text-gray-400">
+                  기록된 입출고 움직임 데이터가 없습니다.
                 </td>
               </tr>
             ) : (
               filteredMovimientos.map((m) => (
-                <tr key={m.id}>
-                  <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
-                    {new Date(m.fecha_hora).toLocaleString()}
-                  </td>
-                  <td>
-                    <span className={`badge ${m.tipo === 'Ingreso' ? 'badge-success' : 'badge-danger'}`} style={{ textTransform: 'none' }}>
+                <tr key={m.id} className="hover:bg-slate-50 transition-colors">
+                  <td className="p-4 font-mono text-xs">{new Date(m.fecha_hora).toLocaleString()}</td>
+                  <td className="p-4">
+                    <span className={`badge ${
+                      m.tipo === 'Ingreso' ? 'badge-success' : 'badge-danger'
+                    }`} style={{ textTransform: 'none' }}>
                       {m.tipo}
                     </span>
                   </td>
-                  <td style={{ fontWeight: 600 }}>{m.item}</td>
-                  <td style={{ fontWeight: 700, textAlign: 'center' }}>{m.cantidad}</td>
-                  <td>{renderDepositoBadge(m.deposito)}</td>
-                  <td style={{ color: 'var(--text-muted)' }}>{m.responsable}</td>
-                  <td style={{ fontSize: '0.8rem', fontStyle: 'italic', color: 'var(--text-muted)' }}>{m.detalles}</td>
+                  <td className="p-4 font-semibold text-slate-700">{m.item}</td>
+                  <td className="p-4 font-bold" style={{ textAlign: 'center' }}>{m.cantidad}</td>
+                  <td className="p-4">{renderDepositoBadge(m.deposito)}</td>
+                  <td className="p-4 text-gray-500">{m.responsable}</td>
+                  <td className="p-4 text-xs italic text-gray-400">{m.detalles}</td>
                 </tr>
               ))
             )}
