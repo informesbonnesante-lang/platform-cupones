@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Filter, Trash2, AlertTriangle, Edit, X, Save, Tag, Boxes, MapPin, Hash } from 'lucide-react';
 import { supabase } from './supabaseStockClient';
 
@@ -19,6 +19,10 @@ const InventoryTable = ({ inventory, userRole, onDelete, onUpdate }) => {
   });
   const [isSaving, setIsSaving] = useState(false);
 
+  // Pagination States
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
   const categories = ['MEDICAMENTOS', 'ESTÉTICA', 'INSUMOS', 'DESCARTABLES', 'ACTIVOS'];
   const areas = ['FARMACIA', 'ESTÉTICA', 'ENFERMERÍA', 'RECEPCIÓN', 'LABORATORIO', 'Depósito Central'];
 
@@ -27,6 +31,17 @@ const InventoryTable = ({ inventory, userRole, onDelete, onUpdate }) => {
     const matchesArea = filterArea === 'Todas' || item.area === filterArea;
     return matchesSearch && matchesArea;
   });
+
+  // Reset to first page on search or filter change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterArea]);
+
+  // Pagination calculations
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredItems.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
 
   const getExpirationStatus = (date) => {
     if (!date || date === 'N/A') return { label: 'Sin Fecha', color: 'var(--text-muted)', class: '' };
@@ -147,7 +162,7 @@ const InventoryTable = ({ inventory, userRole, onDelete, onUpdate }) => {
             </tr>
           </thead>
           <tbody>
-            {filteredItems.map(item => {
+            {currentItems.map(item => {
               const expStatus = getExpirationStatus(item.vencimiento);
               return (
               <tr key={item.id}>
@@ -264,6 +279,83 @@ const InventoryTable = ({ inventory, userRole, onDelete, onUpdate }) => {
       {filteredItems.length === 0 && (
         <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
           No se encontraron ítems con los filtros aplicados.
+        </div>
+      )}
+
+      {/* Paginación */}
+      {filteredItems.length > 0 && (
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          marginTop: '1.5rem', 
+          paddingTop: '1rem', 
+          borderTop: '1px solid rgba(226, 232, 240, 0.8)' 
+        }}>
+          <div className="text-muted" style={{ fontSize: '0.9rem' }}>
+            Mostrando <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{indexOfFirstItem + 1}</span> a{' '}
+            <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>
+              {Math.min(indexOfLastItem, filteredItems.length)}
+            </span>{' '}
+            de <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{filteredItems.length}</span> productos
+          </div>
+          
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <button 
+              className="btn btn-secondary" 
+              style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+            >
+              Anterior
+            </button>
+            
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
+              if (
+                totalPages > 6 &&
+                page !== 1 &&
+                page !== totalPages &&
+                Math.abs(page - currentPage) > 1
+              ) {
+                if (page === 2 && currentPage > 3) {
+                  return <span key="dots-1" style={{ padding: '0 0.5rem', color: 'var(--text-muted)' }}>...</span>;
+                }
+                if (page === totalPages - 1 && currentPage < totalPages - 2) {
+                  return <span key="dots-2" style={{ padding: '0 0.5rem', color: 'var(--text-muted)' }}>...</span>;
+                }
+                return null;
+              }
+              
+              const isCurrent = currentPage === page;
+              return (
+                <button
+                  key={page}
+                  className={`btn ${isCurrent ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ 
+                    padding: '0.5rem 0.8rem', 
+                    fontSize: '0.85rem',
+                    minWidth: '35px',
+                    justifyContent: 'center',
+                    background: isCurrent ? 'var(--primary)' : 'rgba(226, 232, 240, 0.3)',
+                    color: isCurrent ? 'white' : 'var(--text-main)',
+                    borderColor: isCurrent ? 'var(--primary)' : 'transparent',
+                  }}
+                  onClick={() => setCurrentPage(page)}
+                >
+                  {page}
+                </button>
+              );
+            })}
+
+            <button 
+              className="btn btn-secondary" 
+              style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+            >
+              Siguiente
+            </button>
+          </div>
         </div>
       )}
 
