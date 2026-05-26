@@ -107,48 +107,50 @@ const InventoryTable = ({ inventory, userRole, onDelete, onUpdate }) => {
   };
 
   return (
-    <div className="glass-card" style={{ padding: '2rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <div>
-          <h2 style={{ margin: 0 }}>Inventario Maestro de Insumos</h2>
-          <p className="text-muted" style={{ fontSize: '0.9rem' }}>Visualización de saldos y trazabilidad de caducidad</p>
-        </div>
-        {userRole === 'ADMIN' && (
-          <div className="badge badge-success" style={{ padding: '0.5rem 1rem' }}>
-            PERMISO DE EDICIÓN ACTIVO
+    <div className="glass-card bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between overflow-hidden" style={{ padding: 0 }}>
+      <div style={{ padding: '2rem 2rem 1.5rem 2rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+          <div>
+            <h2 style={{ margin: 0 }}>Inventario Maestro de Insumos</h2>
+            <p className="text-muted" style={{ fontSize: '0.9rem' }}>Visualización de saldos y trazabilidad de caducidad</p>
           </div>
-        )}
+          {userRole === 'ADMIN' && (
+            <div className="badge badge-success" style={{ padding: '0.5rem 1rem' }}>
+              PERMISO DE EDICIÓN ACTIVO
+            </div>
+          )}
+        </div>
+
+        <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '0.5rem' }}>
+          <div style={{ position: 'relative', flex: 1 }}>
+            <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+            <input 
+              type="text" 
+              className="input-field" 
+              style={{ paddingLeft: '40px' }} 
+              placeholder="Filtrar por nombre, principio activo o marca..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600, color: 'var(--text-main)' }}>
+              <Filter size={18} className="text-muted" /> Filtrar por Depósito:
+            </label>
+            <select 
+              className="input-field" 
+              style={{ width: '220px' }}
+              value={filterArea}
+              onChange={(e) => setFilterArea(e.target.value)}
+            >
+              {allAreas.map(area => <option key={area} value={area}>{area}</option>)}
+            </select>
+          </div>
+        </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '2rem' }}>
-        <div style={{ position: 'relative', flex: 1 }}>
-          <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-          <input 
-            type="text" 
-            className="input-field" 
-            style={{ paddingLeft: '40px' }} 
-            placeholder="Filtrar por nombre, principio activo o marca..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600, color: 'var(--text-main)' }}>
-            <Filter size={18} className="text-muted" /> Filtrar por Depósito:
-          </label>
-          <select 
-            className="input-field" 
-            style={{ width: '220px' }}
-            value={filterArea}
-            onChange={(e) => setFilterArea(e.target.value)}
-          >
-            {allAreas.map(area => <option key={area} value={area}>{area}</option>)}
-          </select>
-        </div>
-      </div>
-
-      <div className="table-container">
-        <table>
+      <div className="overflow-y-auto max-h-[calc(100vh-340px)]">
+        <table className="w-full text-left border-collapse">
           <thead>
             <tr>
               <th>Nombre del Ítem</th>
@@ -284,26 +286,14 @@ const InventoryTable = ({ inventory, userRole, onDelete, onUpdate }) => {
 
       {/* Paginación */}
       {filteredItems.length > 0 && (
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center', 
-          marginTop: '1.5rem', 
-          paddingTop: '1rem', 
-          borderTop: '1px solid rgba(226, 232, 240, 0.8)' 
-        }}>
-          <div className="text-muted" style={{ fontSize: '0.9rem' }}>
-            Mostrando <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{indexOfFirstItem + 1}</span> a{' '}
-            <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>
-              {Math.min(indexOfLastItem, filteredItems.length)}
-            </span>{' '}
-            de <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{filteredItems.length}</span> productos
-          </div>
-          
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+        <div className="flex justify-between items-center p-4 bg-slate-50 border-t border-gray-100 text-sm w-full">
+          <span className="text-gray-500 font-medium">
+            Mostrando {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, filteredItems.length)} de {filteredItems.length} items
+          </span>
+          <div className="flex gap-1.5">
             <button 
               className="btn btn-secondary" 
-              style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}
+              style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
               onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
             >
@@ -332,9 +322,9 @@ const InventoryTable = ({ inventory, userRole, onDelete, onUpdate }) => {
                   key={page}
                   className={`btn ${isCurrent ? 'btn-primary' : 'btn-secondary'}`}
                   style={{ 
-                    padding: '0.5rem 0.8rem', 
+                    padding: '0.4rem 0.6rem', 
                     fontSize: '0.85rem',
-                    minWidth: '35px',
+                    minWidth: '32px',
                     justifyContent: 'center',
                     background: isCurrent ? 'var(--primary)' : 'rgba(226, 232, 240, 0.3)',
                     color: isCurrent ? 'white' : 'var(--text-main)',
@@ -349,7 +339,7 @@ const InventoryTable = ({ inventory, userRole, onDelete, onUpdate }) => {
 
             <button 
               className="btn btn-secondary" 
-              style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}
+              style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
               onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
               disabled={currentPage === totalPages}
             >
